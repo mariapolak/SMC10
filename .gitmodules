@@ -1,0 +1,3 @@
+[submodule "modules/decomposeSTN"]
+	path = modules/decomposeSTN
+	url = https://github.com/himynameisfuego/decomposeSTN.git

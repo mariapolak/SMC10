@@ -1,3 +1,6 @@
 [submodule "modules/decomposeSTN"]
 	path = modules/decomposeSTN
 	url = https://github.com/himynameisfuego/decomposeSTN.git
+[submodule "modules/tsm-net"]
+	path = modules/tsm-net
+	url = https://github.com/ernestchu/tsm-net.git

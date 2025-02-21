@@ -1,4 +1,4 @@
-from tsm import harmonice_percussive_separation, noise_morphing, phase_vocoder
+from tsm import harmonic_percussive_separation, noise_morphing, phase_vocoder
 from ps import noise_morphing_ps
 from modules import plotting
 
@@ -11,18 +11,18 @@ import os
 
 OUTPUT_DIR = "data/output"
 
-configuration = {
+CONFIG = {
     "tsm_factors": [0.5, 0.75, 0.9, 1.1, 1.25, 2.],
     "ps_factors": [-12, -7, -2, 2, 7, 12],
 }
 
-tsm_algorithms = [harmonice_percussive_separation.time_stretch, phase_vocoder.time_stretch]
-ps_algorithms = [noise_morphing_ps]
+TSM_ALGORITHMS = [harmonic_percussive_separation.time_stretch, phase_vocoder.time_stretch]
+PS_ALGORITHMS = [noise_morphing_ps]
 
 def run_time_stretch_test(x: np.ndarray, sr: int, filename: str, tsm_algorithm: callable):
     algorithm_name = tsm_algorithm.__name__ 
     
-    for tsm_factor in configuration["tsm_factors"]:
+    for tsm_factor in CONFIG["tsm_factors"]:
         output_filepath = f"{OUTPUT_DIR}/tsm/{algorithm_name}/{filename}_{tsm_factor}"
         
         y = tsm_algorithm(x, sr, tsm_factor)
@@ -32,7 +32,7 @@ def run_time_stretch_test(x: np.ndarray, sr: int, filename: str, tsm_algorithm: 
 def run_pitch_shift_test(x: np.ndarray, sr: int, filename: str, ps_algorithm: callable):
     algorithm_name = ps_algorithm.__name__
     
-    for ps_factor in configuration["ps_factors"]:
+    for ps_factor in CONFIG["ps_factors"]:
         output_filepath = f"{OUTPUT_DIR}/ps/{algorithm_name}/{filename}_{ps_factor}"
         
         y = ps_algorithm(x, sr, ps_factor)
@@ -45,7 +45,7 @@ def run_batch_tsm_test(input_dir: str):
             filepath = os.path.join(input_dir, filename)
             x, sr = librosa.load(filepath, sr=None)
             
-            for tsm_algorithm in tsm_algorithms:
+            for tsm_algorithm in TSM_ALGORITHMS:
                 run_time_stretch_test(x, sr, filename, tsm_algorithm)
 
 
@@ -55,13 +55,13 @@ def run_batch_ps_test(input_dir: str):
             filepath = os.path.join(input_dir, filename)
             x, sr = librosa.load(filepath, sr=None)
             
-            for ps_algorithm in ps_algorithms:
+            for ps_algorithm in PS_ALGORITHMS:
                 run_pitch_shift_test(x, sr, filename, ps_algorithm)
 
 if __name__ == "__main__":
     x, sr = librosa.load("test.wav", sr=None)
     
-    run_time_stretch_test(x, sr, "test.wav", harmonice_percussive_separation.time_stretch)
+    run_time_stretch_test(x, sr, "test.wav", harmonic_percussive_separation.time_stretch)
     run_time_stretch_test(x, sr, "test.wav", phase_vocoder.time_stretch)
     
 

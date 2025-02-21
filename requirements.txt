@@ -1,0 +1,10 @@
+pytsmod
+numpy
+librosa
+scipy
+torch
+torchvision
+torchaudio
+matplotlib
+audiobox_aesthetics
+soundfile

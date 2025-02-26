@@ -11,14 +11,21 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
+import performence_eval as perf
 
 import librosa
 import glob
+import pandas as pd
 
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/output"
+OUTPUT_EVAL_OBJ_DIR = "evaluation/objective"
+OUTPUT_EVAL_SUBJ_DIR = "evaluation/subjective"
 
-CONFIG = {
+SPEED_ITERATIONS = 10
+MEMORY_ITERATIONS = 2
+
+ALGORITHM_FACTORS = {
     "tsm_factors": [0.5, 2.],
     "ps_factors": [-12, 12],
 }
@@ -31,7 +38,7 @@ def run_time_stretch_test(x: np.ndarray, sr: int, file_path_out: str, tsm: TimeS
     """
     Time stretches the input audio signal with the given TSM algorithm by each factor in the CONFIG dictionary and saves the outputs to files.
     """
-    for tsm_factor in CONFIG["tsm_factors"]:
+    for tsm_factor in ALGORITHM_FACTORS["tsm_factors"]:
         
         y = tsm.time_stretch(x, sr, tsm_factor)
         plotting.plot_audio_comparison(x, y, sr, f"Time Stretch {tsm_factor}x", save=True, filepath=f"{file_path_out}_{tsm_factor}.png")
@@ -41,7 +48,7 @@ def run_pitch_shift_test(x: np.ndarray, sr: int, file_path_out: str, ps: PitchSh
     """
     Pitch shifts the input audio signal with the given PS algorithm by each factor in the CONFIG dictionary and saves the outputs to files.
     """
-    for ps_factor in CONFIG["ps_factors"]:
+    for ps_factor in ALGORITHM_FACTORS["ps_factors"]:
         
         y = ps.pitch_shift(x, sr, ps_factor)
         plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{file_path_out}_{ps_factor}.png")
@@ -78,10 +85,47 @@ def get_output_path_and_filename(mode: str, algorithm: str, input_file_path: str
     input_file_path_dir = Path(input_file_path).parent
     return f"{OUTPUT_DIR}_{TIMESTAMP}/{mode}/{algorithm}/{input_file_path_dir}", Path(input_file_path).stem
 
+def run_performance_test(): # output_csv: str, test_audio: str, iterations: int
+    output_csv = f"{OUTPUT_EVAL_OBJ_DIR}/performance_{TIMESTAMP}.csv"
+    test_audio = next(glob.iglob('**/*.flac', root_dir=INPUT_DIR, recursive=True))
+    x, sr = librosa.load(f"{INPUT_DIR}/{test_audio}", sr=None)
+    audio_length = len(x) / sr
+    tsm_factor = 2
+    ps_factor = 2
+
+    data = []
+
+    for tsm_algorithm in TSM_ALGORITHMS:
+        speed = perf.measure_speed(SPEED_ITERATIONS, tsm_algorithm.time_stretch, x, sr, tsm_factor)
+        memory = perf.measure_memory(MEMORY_ITERATIONS, tsm_algorithm.time_stretch, x, sr, tsm_factor)
+        data.append({
+            "algorithm": tsm_algorithm.name, "type": "TSM", "speed": speed, 
+            "speed_iterations": SPEED_ITERATIONS, "memory": memory, "memory_iterations": MEMORY_ITERATIONS,
+            "audio_length": audio_length, "sample_rate": sr, "factor": tsm_factor
+        })
+        
+    for ps_algorithm in PS_ALGORITHMS:
+        speed = perf.measure_speed(SPEED_ITERATIONS, ps_algorithm.pitch_shift, x, sr, ps_factor)
+        memory = perf.measure_memory(MEMORY_ITERATIONS, ps_algorithm.pitch_shift, x, sr, ps_factor)
+        data.append({
+            "algorithm": ps_algorithm.name, "type": "PS", "speed": speed, 
+            "speed_iterations": SPEED_ITERATIONS, "memory": memory, "memory_iterations": MEMORY_ITERATIONS,
+            "audio_length": audio_length, "sample_rate": sr, "factor": ps_factor
+        })
+
+    df = pd.DataFrame(data)
+    df.to_csv(output_csv, index=False)
+
+
 if __name__ == "__main__":
-    create_directories(INPUT_DIR)
-    run_batch_tsm_test(INPUT_DIR)
+    ### Audio and plot measurments
+    # create_directories(INPUT_DIR)
+    # run_batch_tsm_test(INPUT_DIR)
     # run_batch_ps_test(INPUT_DIR)    
+
+    ### Performance measurments
+    run_performance_test()
+
 
 
 

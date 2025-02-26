@@ -8,3 +8,4 @@ torchaudio
 matplotlib
 audiobox_aesthetics
 soundfile
+pandas

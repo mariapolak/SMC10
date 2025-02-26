@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 import performence_eval as perf
+import quality_eval as qual
 
 import config
 import librosa
@@ -76,14 +77,10 @@ if __name__ == "__main__":
     ### Performance measurments
     perf.run_performance_test()
 
-    ### PESQ
-    ### STOI
-    ### NISQA
-    ### SQOREQ
-    ### Audiobox-aesthetics
-    ### Fuzzy Energy
-    ### Estimate spectral envelopes
-    ### decay rate deviation (preservation of spectral characteristics)
+    ### Quality measurments
+    qual.run_speech_metrics()
+    qual.run_audio_metrics()
+    
 
 
 

@@ -9,3 +9,6 @@ matplotlib
 audiobox_aesthetics
 soundfile
 pandas
+crepe
+tensorflow
+sounddevice

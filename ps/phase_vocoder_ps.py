@@ -1,10 +1,13 @@
 from .pitch_shift_base import PitchShiftBase
-import numpy as np
 
-class NoiseMorphingPS(PitchShiftBase):
+import pytsmod as tsm
+import numpy as np
+import librosa
+
+class PV_PS(PitchShiftBase):
     def pitch_shift(self, input: np.array, sr: int, shift_factor_st: float) -> np.array:
         pass
 
     @property
     def name(self):
-        return "NMPS"
+        return "PV_PS"

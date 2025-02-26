@@ -1,10 +1,13 @@
-from .pitch_shift_base import PitchShiftBase
+from abc import ABC, abstractmethod
 import numpy as np
 
-class NoiseMorphingPS(PitchShiftBase):
+class PitchShiftBase(ABC):
+
+    @abstractmethod
     def pitch_shift(self, input: np.array, sr: int, shift_factor: float) -> np.array:
         pass
 
     @property
+    @abstractmethod
     def name(self):
-        return "NMPS"
+        pass

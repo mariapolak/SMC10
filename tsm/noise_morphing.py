@@ -1,4 +1,6 @@
 from modules.decomposeSTN import decomposeSTN as STN
+from .time_stretch_base import TimeStretchBase
+
 import pytsmod as tsm
 import numpy as np
 import librosa
@@ -8,17 +10,23 @@ Implementation of the noise morphing algorithm for time-stretching noise in an a
 Eloi Moliner et al., “Noise Morphing for Audio Time Stretching,” IEEE Signal Processing Letters 31 (2024): 1144–1148, accessed September 25, 2024, https://ieeexplore.ieee.org/document/10494355/.
 """
 
-nWin1 = 8192 # samples
-nWin2 = 512 # samples
+class NoiseMorphing(TimeStretchBase):
+    def __init__(self):
+        self.nWin1 = 8192 # samples
+        self.nWin2 = 512 # samples
 
-def time_stretch(input: np.array, sr: int, stretch_factor: float) -> np.array:
-    [xs, xt, xn] = STN.decSTN(input, sr, nWin1, nWin2)
+    def time_stretch(self, input: np.array, sr: int, stretch_factor: float) -> np.array:
+        [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
 
-    xs_stretched = sines_stretching(xs, stretch_factor)
-    xt_stretched = transient_stretching(xt, stretch_factor)
-    xn_stretched = noise_stretching(xn, stretch_factor)
+        xs_stretched = sines_stretching(xs, stretch_factor)
+        xt_stretched = transient_stretching(xt, stretch_factor)
+        xn_stretched = noise_stretching(xn, stretch_factor)
 
-    return xs_stretched + xt_stretched + xn_stretched
+        return xs_stretched + xt_stretched + xn_stretched
+
+    @property
+    def name(self):
+        return "NM"
 
 def sines_stretching(x: np.array, stretch_factor: float) -> np.array:
     y = tsm.phase_vocoder(x, stretch_factor, phase_lock=True)

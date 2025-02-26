@@ -5,74 +5,83 @@ from ps.pitch_shift_base import PitchShiftBase
 from ps import noise_morphing_ps
 from modules import plotting
 
+from pathlib import Path
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 
 import librosa
-import os
+import glob
 
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/output"
 
 CONFIG = {
-    "tsm_factors": [0.5, 0.75, 0.9, 1.1, 1.25, 2.],
-    "ps_factors": [-12, -7, -2, 2, 7, 12],
+    "tsm_factors": [0.5, 2.],
+    "ps_factors": [-12, 12],
 }
 
+TIMESTAMP = datetime.now().strftime("%y%m%d%H%M")
 TSM_ALGORITHMS = [harmonic_percussive_separation.HPS(), phase_vocoder.PV()]
 PS_ALGORITHMS = [noise_morphing_ps.NoiseMorphingPS()]
 
-def run_time_stretch_test(x: np.ndarray, sr: int, filename: str, tsm: TimeStretchBase):
+def run_time_stretch_test(x: np.ndarray, sr: int, file_path_out: str, tsm: TimeStretchBase):
     """
     Time stretches the input audio signal with the given TSM algorithm by each factor in the CONFIG dictionary and saves the outputs to files.
     """
     for tsm_factor in CONFIG["tsm_factors"]:
-        output_filepath = f"{OUTPUT_DIR}/tsm/{tsm.name}/{filename}_{tsm_factor}"
         
         y = tsm.time_stretch(x, sr, tsm_factor)
-        plotting.plot_audio_comparison(x, y, sr, f"Time Stretch {tsm_factor}x", save=True, filepath=f"{output_filepath}.png")
-        sf.write(f"{output_filepath}.flac", y, sr)
+        plotting.plot_audio_comparison(x, y, sr, f"Time Stretch {tsm_factor}x", save=True, filepath=f"{file_path_out}_{tsm_factor}.png")
+        sf.write(f"{file_path_out}_{tsm_factor}.flac", y, sr)
 
-def run_pitch_shift_test(x: np.ndarray, sr: int, filename: str, ps: PitchShiftBase):  
+def run_pitch_shift_test(x: np.ndarray, sr: int, file_path_out: str, ps: PitchShiftBase):  
     """
     Pitch shifts the input audio signal with the given PS algorithm by each factor in the CONFIG dictionary and saves the outputs to files.
     """
     for ps_factor in CONFIG["ps_factors"]:
-        output_filepath = f"{OUTPUT_DIR}/ps/{ps.name}/{filename}_{ps_factor}"
         
         y = ps.pitch_shift(x, sr, ps_factor)
-        plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{output_filepath}.png")
-        sf.write(f"{output_filepath}.flac", y, sr)
+        plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{file_path_out}_{ps_factor}.png")
+        sf.write(f"{file_path_out}_{ps_factor}.flac", y, sr)
 
 def run_batch_tsm_test(input_dir: str):
-    for filename in os.listdir(input_dir):
-        if filename.endswith(".flac"):                      # find all flac files in the input directory
-            filepath = os.path.join(input_dir, filename)    # get the full path of the file
-            x, sr = librosa.load(filepath, sr=None)         # load the audio file
-            
-            for tsm_algorithm in TSM_ALGORITHMS:            # test each time-stretching algorithm on the audio file
-                run_time_stretch_test(x, sr, filename, tsm_algorithm)
+    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):  # find all flac files in the input directory
+        x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)                  # load the audio file
+        
+        for tsm_algorithm in TSM_ALGORITHMS:            # test each time-stretching algorithm on the audio file
+            output_filepath, filename = get_output_path_and_filename("tsm", tsm_algorithm.name, audio_path)
+            run_time_stretch_test(x, sr, f"{output_filepath}/{filename}", tsm_algorithm)
 
 
 def run_batch_ps_test(input_dir: str):
-    for filename in os.listdir(input_dir):
-        if filename.endswith(".flac"):                      # find all flac files in the input directory
-            filepath = os.path.join(input_dir, filename)    # get the full path of the file
-            x, sr = librosa.load(filepath, sr=None)         # load the audio file
-            
-            for ps_algorithm in PS_ALGORITHMS:              # test each pitch-shifting algorithm on the audio file
-                run_pitch_shift_test(x, sr, filename, ps_algorithm)
+    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):  # find all flac files in the input directory
+        x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)                  # load the audio file
+        
+        for ps_algorithm in PS_ALGORITHMS: # test each pitch-shifting algorithm on the audio file
+            output_filepath, filename = get_output_path_and_filename("ps", ps_algorithm.name, audio_path)
+            run_pitch_shift_test(x, sr, f"{output_filepath}/{filename}", ps_algorithm)
+
+
+def create_directories(input_dir: str):
+    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):
+        for tsm_algorithm in TSM_ALGORITHMS:
+            output_filepath, _ = get_output_path_and_filename("tsm", tsm_algorithm.name, audio_path)
+            Path(output_filepath).mkdir(parents=True, exist_ok=True)
+        for ps_algorithm in PS_ALGORITHMS:
+            output_filepath, _ = get_output_path_and_filename("ps", ps_algorithm.name, audio_path)
+            Path(output_filepath).mkdir(parents=True, exist_ok=True)
+
+def get_output_path_and_filename(mode: str, algorithm: str, input_file_path: str) -> tuple[str, str]:
+    input_file_path_dir = Path(input_file_path).parent
+    return f"{OUTPUT_DIR}_{TIMESTAMP}/{mode}/{algorithm}/{input_file_path_dir}", Path(input_file_path).stem
 
 if __name__ == "__main__":
-    # run_batch_tsm_test(INPUT_DIR)
-
-    filename = f"{INPUT_DIR}/p227_002_mic1.flac"
-    x, sr = librosa.load(filename, sr=None)
-    
-    run_time_stretch_test(x, sr, f"{INPUT_DIR}/p227_002_mic1.flac", harmonic_percussive_separation.HPS())
-    run_time_stretch_test(x, sr, f"{INPUT_DIR}/p227_002_mic1.flac", phase_vocoder.PV())
-    
+    create_directories(INPUT_DIR)
+    run_batch_tsm_test(INPUT_DIR)
+    # run_batch_ps_test(INPUT_DIR)    
 
 
 

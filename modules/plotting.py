@@ -48,5 +48,6 @@ def plot_audio_comparison(x: np.ndarray, y: np.ndarray, sr: int, title: str, sav
     
     if save:
         plt.savefig(filepath)
+        plt.close()
     else:
         plt.show()

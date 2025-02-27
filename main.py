@@ -35,8 +35,8 @@ def run_pitch_shift_test(x: np.ndarray, sr: int, file_path_out: str, ps: PitchSh
         plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{file_path_out}_{ps_factor}.png")
         sf.write(f"{file_path_out}_{ps_factor}.flac", y, sr)
 
-def run_batch_tsm_test(input_dir: str):
-    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):  # find all flac files in the input directory
+def run_batch_tsm_test(input_dir: str, extension: str = "flac"):
+    for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True):  # find all flac files in the input directory
         x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)                  # load the audio file
         
         for tsm_algorithm in config.TSM_ALGORITHMS:            # test each time-stretching algorithm on the audio file
@@ -44,8 +44,8 @@ def run_batch_tsm_test(input_dir: str):
             run_time_stretch_test(x, sr, f"{output_filepath}/{filename}", tsm_algorithm)
 
 
-def run_batch_ps_test(input_dir: str):
-    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):  # find all flac files in the input directory
+def run_batch_ps_test(input_dir: str, extension: str = "flac"):
+    for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True):  # find all flac files in the input directory
         x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)                  # load the audio file
         
         for ps_algorithm in config.PS_ALGORITHMS: # test each pitch-shifting algorithm on the audio file
@@ -53,8 +53,8 @@ def run_batch_ps_test(input_dir: str):
             run_pitch_shift_test(x, sr, f"{output_filepath}/{filename}", ps_algorithm)
 
 
-def create_directories(input_dir: str):
-    for audio_path in glob.iglob('**/*.flac', root_dir=input_dir, recursive=True):
+def create_directories(input_dir: str, extension: str = "flac"):
+    for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True):
         for tsm_algorithm in config.TSM_ALGORITHMS:
             output_filepath, _ = get_output_path_and_filename("tsm", tsm_algorithm.name, audio_path)
             Path(output_filepath).mkdir(parents=True, exist_ok=True)
@@ -70,9 +70,14 @@ def get_output_path_and_filename(mode: str, algorithm: str, input_file_path: str
 
 if __name__ == "__main__":
     ### Audio and plot measurments
-    # create_directories(INPUT_DIR)
-    # run_batch_tsm_test(INPUT_DIR)
-    # run_batch_ps_test(INPUT_DIR)    
+    create_directories(config.INPUT_DIR)
+    create_directories(config.INPUT_DIR, "wav")
+
+    run_batch_tsm_test(config.INPUT_DIR)
+    run_batch_tsm_test(config.INPUT_DIR, "wav")
+
+    run_batch_ps_test(config.INPUT_DIR)    
+    run_batch_ps_test(config.INPUT_DIR, "wav")
 
     ### Performance measurments
     perf.run_performance_test()
@@ -80,6 +85,7 @@ if __name__ == "__main__":
     ### Quality measurments
     qual.run_speech_metrics()
     qual.run_audio_metrics()
+
     
 
 

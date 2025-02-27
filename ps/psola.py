@@ -9,8 +9,8 @@ class TDPSOLA(PitchShiftBase):
     def pitch_shift(self, input: np.array, sr: int, shift_factor_st: float) -> np.array:
         shift_factor = self.pitch_factor_st_to_linear(shift_factor_st)
         # _, f0, _, _ = crepe.predict(input, sr, viterbi=True, step_size=10)
-        f0, _, _ = librosa.pyin(input, sr=sr, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C8'), fill_na=None)
-        y = tsm.tdpsola(input, sr, f0, beta=shift_factor, p_hop_size=441, p_win_size=1470)
+        f0, _, _ = librosa.pyin(input, sr=sr, fmin=librosa.note_to_hz('C2'), fmax=librosa.note_to_hz('C7'), fill_na=None)
+        y = tsm.tdpsola(input, sr, f0, beta=shift_factor, p_hop_size=2048//4, p_win_size=2048)
 
         return y
 
@@ -22,9 +22,16 @@ if __name__ == "__main__":
     import sounddevice as sd
     import matplotlib.pyplot as plt
 
+    # x, sr = librosa.load(f"..\data\input\guitar\guitar2.wav", sr=None) # Load audio
     x, sr = librosa.load(f"..\data\input\p227_001\p227_001_mic1.flac", sr=None) # Load audio
     psola = TDPSOLA() # Initialize PSOLA object
     y = psola.pitch_shift(x, sr, 12) # Pitch shift
+
+    input('Press Enter to play the input...')
+    sd.play(x, sr)
+    input('Press Enter to play the output...')
+    sd.play(y, sr)
+    input('Press Enter to continue')
 
     plt.figure(figsize=(14, 5))
     plt.subplot(1, 2, 1)

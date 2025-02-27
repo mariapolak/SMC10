@@ -4,10 +4,10 @@ import pytsmod as tsm
 import numpy as np
 import librosa
 
-class PV_PS(PitchShiftBase):
+class PV(PitchShiftBase):
     def pitch_shift(self, input: np.array, sr: int, shift_factor_st: float) -> np.array:
         pass
 
     @property
     def name(self):
-        return "PV_PS"
+        return "PV"

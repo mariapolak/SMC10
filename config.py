@@ -1,8 +1,5 @@
-from tsm.time_stretch_base import TimeStretchBase
 from tsm import harmonic_percussive_separation, noise_morphing, phase_vocoder
-
-from ps.pitch_shift_base import PitchShiftBase
-from ps import noise_morphing_ps
+from ps import noise_morphing_ps, phase_vocoder_ps, psola
 
 from datetime import datetime
 
@@ -21,4 +18,4 @@ ALGORITHM_FACTORS = {
 
 TIMESTAMP = datetime.now().strftime("%y%m%d%H%M")
 TSM_ALGORITHMS = [harmonic_percussive_separation.HPS(), phase_vocoder.PV()]
-PS_ALGORITHMS = [noise_morphing_ps.NoiseMorphingPS()]
+PS_ALGORITHMS = [psola.TDPSOLA()]

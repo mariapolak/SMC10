@@ -4,3 +4,7 @@
 [submodule "modules/tsm-net"]
 	path = modules/tsm-net
 	url = https://github.com/ernestchu/tsm-net.git
+
+[submodule "evaluation/NISQA"]
+	path = evaluation/NISQA
+	url = https://github.com/gabrielmittag/NISQA.git

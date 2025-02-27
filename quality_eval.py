@@ -1,22 +1,17 @@
 from pathlib import Path
 from pesq import pesq
+from pystoi import stoi
 
 import config
 import librosa
 import glob
 import json
+import scoreq
 
 import numpy as np
 import pandas as pd
 import soundfile as sf
 import matplotlib.pyplot as plt
-
-def run_speech_metrics():
-    ### PESQ
-    ### STOI
-    ### NISQA # python run_predict.py --mode predict_dir --pretrained_model weights/nisqa.tar --data_dir /path/to/folder/with/wavs --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results
-    ### SCOREQ
-    pass
 
 def run_audio_metrics():
     ### Fuzzy Energy
@@ -24,6 +19,37 @@ def run_audio_metrics():
     ### decay rate deviation (preservation of spectral characteristics)
     ### Objective measure from AES
     pass
+
+def run_stoi():
+    # TODO for each wav file in the directory, run the predictions and save them to a csv file
+
+    clean, fs = sf.read('path/to/clean/audio')
+    denoised, fs = sf.read('path/to/denoised/audio')
+
+    # Clean and den should have the same length, and be 1D
+    d = stoi(clean, denoised, fs, extended=False)
+
+def run_scoreq():
+    # Predict quality of natural speech in NR mode
+    nr_scoreq = scoreq.Scoreq(data_domain='natural', mode='nr')
+    # TODO for each wav file in the directory, run the predictions and save them to a csv file
+    # TODO use 16 kHz wavs 
+    # TODO understand which of the metrics will be useful for the evaluation
+
+    pred_mos = nr_scoreq.predict(test_path='./data/opus.wav', ref_path=None)
+
+    # Predict quality of natural speech in REF mode
+    ref_scoreq = scoreq.Scoreq(data_domain='natural', mode='ref')
+    pred_distance = ref_scoreq.predict(test_path='./data/opus.wav', ref_path='./data/ref.wav')
+
+    # Predict quality of synthetic speech in NR mode
+    nr_scoreq = scoreq.Scoreq(data_domain='synthetic', mode='nr')
+    pred_mos = nr_scoreq.predict(test_path='./data/opus.wav', ref_path=None)
+
+    # Predict quality of synthetic speech in REF mode
+    ref_scoreq = scoreq.Scoreq(data_domain='synthetic', mode='ref')
+    pred_distance = ref_scoreq.predict(test_path='./data/opus.wav', ref_path='./data/ref.wav')
+
 
 
 # TODO modify the function so it takes algorithm type and algorithm name as arguments and saves it correctly to csv
@@ -44,6 +70,7 @@ def run_pesq(output_file: str, root_dir_deg: str = config.OUTPUT_DIR, root_dir_r
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
 
+# TODO update once saving is done somewhere else
 def prepare_audio_aesthetics_json(output_dir: str, root_dir: str = config.INPUT_DIR, extensions: list[str] = ["flac", "wav"]):
     """
     Prepare the audio aesthetics jsonl file for the audio aesthetics evaluation
@@ -52,7 +79,6 @@ def prepare_audio_aesthetics_json(output_dir: str, root_dir: str = config.INPUT_
     {"path":"/path/to/b.wav"}
     {"path":"/path/to/z.wav"}
     """
-    output_dir = f"{output_dir}_{config.TIMESTAMP}"
     (Path(output_dir) / "wav").mkdir(parents=True, exist_ok=True)
 
     with open(f"{output_dir}/audio_aesthetics.jsonl", "w") as f:
@@ -100,6 +126,11 @@ def plot_audio_aesthetics_results(jsonl_path: str):
     plt.ylabel('Average Value')
     plt.title('Average Audio Aesthetics Metrics')
     plt.show()
+
+# TODO: function to change all the files to wav format and save them in a new directory
+# TODO: function to change all the files from 48kHz to 16kHz and save them in a new directory
+
+# TODO: run all on what I already have and then write scripts for plotting all the results
 
 if __name__ == "__main__":
     prepare_audio_aesthetics_json("evaluation/objective/aa") # run evaluation by `audio-aes input.jsonl --batch-size 100 > output.jsonl``

@@ -15,3 +15,5 @@ sounddevice
 cython
 audiobox_aesthetics
 pesq
+# scoreq
+pystoi 

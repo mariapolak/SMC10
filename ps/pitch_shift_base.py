@@ -14,3 +14,7 @@ class PitchShiftBase(ABC):
     @abstractmethod
     def name(self):
         pass
+    
+    @property
+    def type(self):
+        return "PS"

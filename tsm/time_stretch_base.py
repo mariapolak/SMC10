@@ -11,3 +11,7 @@ class TimeStretchBase(ABC):
     @abstractmethod
     def name(self):
         pass
+    
+    @property
+    def type(self):
+        return "TSM"

@@ -5,8 +5,9 @@ from datetime import datetime
 
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/output"
-OUTPUT_EVAL_OBJ_DIR = "evaluation/objective"
-OUTPUT_EVAL_SUBJ_DIR = "evaluation/subjective"
+EVAL_OBJ_DIR = "evaluation/objective"
+EVAL_SUBJ_DIR = "evaluation/subjective"
+EVAL_DATA_DIR = "evaluation/data"
 
 SPEED_ITERATIONS = 10
 MEMORY_ITERATIONS = 2

@@ -6,12 +6,13 @@ import config
 import librosa
 import glob
 import json
-import scoreq
 
 import numpy as np
 import pandas as pd
 import soundfile as sf
 import matplotlib.pyplot as plt
+
+import audio_converter as ac
 
 def run_audio_metrics():
     ### Fuzzy Energy
@@ -20,58 +21,37 @@ def run_audio_metrics():
     ### Objective measure from AES
     pass
 
-def run_stoi():
-    # TODO for each wav file in the directory, run the predictions and save them to a csv file
+# ONLY FOR PITCH SHIFTING (does not work with different length signals)
+def run_stoi(output_file: str, algorithm_type: str, algorithm_name: str,
+             root_dir_deg: str = ac.WAV_48K_DIR, root_dir_ref: str = config.INPUT_DIR):
+    results = []
+    fs = 48000
+    
+    for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir_ref, recursive=True):
+        ref_path = f"{root_dir_ref}/{audio_path}"
+        deg_path = f"{root_dir_deg}/{audio_path}"
+        
+        d = stoi(ref_path, deg_path, fs, extended=False) # d = stoi(clean, denoised, fs, extended=False) Clean and den should have the same length, and be 1D
+        results.append({"file": audio_path, "mode": "ref", "type": algorithm_type, "algo": algorithm_name , "pred_distance": d})
+    
+    df = pd.DataFrame(results)
+    df.to_csv(output_file, index=False)
 
-    clean, fs = sf.read('path/to/clean/audio')
-    denoised, fs = sf.read('path/to/denoised/audio')
-
-    # Clean and den should have the same length, and be 1D
-    d = stoi(clean, denoised, fs, extended=False)
-
-def run_scoreq():
-    # Predict quality of natural speech in NR mode
-    nr_scoreq = scoreq.Scoreq(data_domain='natural', mode='nr')
-    # TODO for each wav file in the directory, run the predictions and save them to a csv file
-    # TODO use 16 kHz wavs 
-    # TODO understand which of the metrics will be useful for the evaluation
-
-    pred_mos = nr_scoreq.predict(test_path='./data/opus.wav', ref_path=None)
-
-    # Predict quality of natural speech in REF mode
-    ref_scoreq = scoreq.Scoreq(data_domain='natural', mode='ref')
-    pred_distance = ref_scoreq.predict(test_path='./data/opus.wav', ref_path='./data/ref.wav')
-
-    # Predict quality of synthetic speech in NR mode
-    nr_scoreq = scoreq.Scoreq(data_domain='synthetic', mode='nr')
-    pred_mos = nr_scoreq.predict(test_path='./data/opus.wav', ref_path=None)
-
-    # Predict quality of synthetic speech in REF mode
-    ref_scoreq = scoreq.Scoreq(data_domain='synthetic', mode='ref')
-    pred_distance = ref_scoreq.predict(test_path='./data/opus.wav', ref_path='./data/ref.wav')
-
-
-
-# TODO modify the function so it takes algorithm type and algorithm name as arguments and saves it correctly to csv
-def run_pesq(output_file: str, root_dir_deg: str = config.OUTPUT_DIR, root_dir_ref: str = config.INPUT_DIR, extensions: list[str] = ["flac", "wav"]):
+def run_pesq(output_file: str, algorithm_type: str, algorithm_name: str,
+             root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = config.INPUT_DIR):
     results = []
 
-    for extension in extensions:
-        for audio_path in glob.iglob(f"**/*.{extension}", root_dir=root_dir_ref, recursive=True): 
-            x, sr = librosa.load(f"{root_dir_ref}/{audio_path}", sr=None)
-            x_res = librosa.resample(x, sr, 16000)
-
-            y, sr = librosa.load(f"{root_dir_deg}/{audio_path}", sr=None)
-            y_res = librosa.resample(y, sr, 16000)
-            
-            pesq_score = pesq(16000, x_res, y_res, 'wb')
-            results.append({"file": audio_path, "pesq_score": pesq_score, "algorthim": root_dir_deg})
+    for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir_ref, recursive=True): 
+        ref, _ = librosa.load(f"{root_dir_ref}/{audio_path}", sr=None)
+        deg, _ = librosa.load(f"{root_dir_deg}/{audio_path}", sr=None)
+        
+        pesq_score = pesq(16000, ref, deg, 'wb')
+        results.append({"file": audio_path, "type": algorithm_type, "algo": algorithm_name , "pesq_score": pesq_score})
 
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
 
-# TODO update once saving is done somewhere else
-def prepare_audio_aesthetics_json(output_dir: str, root_dir: str = config.INPUT_DIR, extensions: list[str] = ["flac", "wav"]):
+def prepare_audio_aesthetics_json(output_file: str, root_dir: str = ac.WAV_48K_DIR):
     """
     Prepare the audio aesthetics jsonl file for the audio aesthetics evaluation
     jsonl format:
@@ -79,16 +59,23 @@ def prepare_audio_aesthetics_json(output_dir: str, root_dir: str = config.INPUT_
     {"path":"/path/to/b.wav"}
     {"path":"/path/to/z.wav"}
     """
-    (Path(output_dir) / "wav").mkdir(parents=True, exist_ok=True)
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, "w") as f:
+        for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
+            f.write(f'{{"path":"{audio_path}"}}\n')
 
-    with open(f"{output_dir}/audio_aesthetics.jsonl", "w") as f:
-        for extension in extensions:
-            for audio_path in glob.iglob(f"**/*.{extension}", root_dir=root_dir, recursive=True): 
-                x, sr = librosa.load(f"{root_dir}/{audio_path}", sr=None)
-                output_filepath = f"{output_dir}/wav/{Path(audio_path).stem}.wav"
-                sf.write(output_filepath, x, sr)
-                f.write(f'{{"path":"{output_filepath}"}}\n')
 
+def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
+    """
+    Prepare the NISQA csv file for the evaluation
+    """
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file, "w") as f:
+        f.write("path\n")
+        for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
+            f.write(f"{audio_path}\n")
 
 def plot_audio_aesthetics_results(jsonl_path: str):
     # JSONL Description:
@@ -127,13 +114,10 @@ def plot_audio_aesthetics_results(jsonl_path: str):
     plt.title('Average Audio Aesthetics Metrics')
     plt.show()
 
-# TODO: function to change all the files to wav format and save them in a new directory
-# TODO: function to change all the files from 48kHz to 16kHz and save them in a new directory
-
 # TODO: run all on what I already have and then write scripts for plotting all the results
 
 if __name__ == "__main__":
-    prepare_audio_aesthetics_json("evaluation/objective/aa") # run evaluation by `audio-aes input.jsonl --batch-size 100 > output.jsonl``
-
+    prepare_audio_aesthetics_json("evaluation/objective/aa/audio_aesthetics.jsonl") # run evaluation by `audio-aes input.jsonl --batch-size 100 > output.jsonl`
+    prepare_nisqa_csv("evaluation/objective/nisqa/files.csv") # run evaluation by `python run_predict.py --mode predict_csv --pretrained_model weights/nisqa.tar --csv_file files.csv --csv_deg column_name_of_filepaths --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results`
 
             

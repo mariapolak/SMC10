@@ -8,3 +8,6 @@
 [submodule "evaluation/NISQA"]
 	path = evaluation/NISQA
 	url = https://github.com/gabrielmittag/NISQA.git
+[submodule "evaluation/visqol"]
+	path = evaluation/visqol
+	url = https://github.com/google/visqol.git

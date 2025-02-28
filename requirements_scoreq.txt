@@ -1,0 +1,6 @@
+scoreq
+numpy
+librosa
+sounddevice
+soundfile
+pandas

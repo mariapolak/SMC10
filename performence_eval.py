@@ -47,7 +47,7 @@ def measure_memory(iterations: int, func: callable, *args):
     return avg_peak 
 
 def run_performance_test(): 
-    output_csv = f"{config.OUTPUT_EVAL_OBJ_DIR}/performance/performance_{config.TIMESTAMP}.csv"
+    output_csv = f"{config.EVAL_OBJ_DIR}/performance/performance_{config.TIMESTAMP}.csv"
     test_audio = next(glob.iglob('**/*.flac', root_dir=config.INPUT_DIR, recursive=True))
     x, sr = librosa.load(f"{config.INPUT_DIR}/{test_audio}", sr=None)
     audio_length = len(x) / sr

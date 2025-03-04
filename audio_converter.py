@@ -29,9 +29,9 @@ def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             Path(output_filepath).parent.mkdir(parents=True, exist_ok=True)
             
             x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)
-            x_res = librosa.resample(x, sr, 16000)
+            x_res = librosa.resample(x, orig_sr=sr, target_sr=16000)
             sf.write(output_filepath, x_res, 16000)
             
 if __name__ == "__main__":
-    
+    create_wav_16k("data/input/wav16", "data/input/wav48", ["wav"])
             

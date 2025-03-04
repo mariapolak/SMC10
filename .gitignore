@@ -175,3 +175,4 @@ data/input
 data/output_*
 *.wav
 *flac
+.DS_Store

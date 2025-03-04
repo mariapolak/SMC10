@@ -13,8 +13,8 @@ SPEED_ITERATIONS = 10
 MEMORY_ITERATIONS = 2
 
 ALGORITHM_FACTORS = {
-    "tsm_factors": [0.5, 2.],
-    "ps_factors": [-12, 12],
+    "tsm_factors": [2.],
+    "ps_factors": [12],
 }
 
 TIMESTAMP = datetime.now().strftime("%y%m%d%H%M")

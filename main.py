@@ -22,8 +22,8 @@ def run_time_stretch_test(x: np.ndarray, sr: int, file_path_out: str, tsm: TimeS
     for tsm_factor in config.ALGORITHM_FACTORS["tsm_factors"]:
         
         y = tsm.time_stretch(x, sr, tsm_factor)
-        plotting.plot_audio_comparison(x, y, sr, f"Time Stretch {tsm_factor}x", save=True, filepath=f"{file_path_out}_{tsm_factor}.png")
-        sf.write(f"{file_path_out}_{tsm_factor}.flac", y, sr)
+        # plotting.plot_audio_comparison(x, y, sr, f"Time Stretch {tsm_factor}x", save=True, filepath=f"{file_path_out}_{tsm_factor}.png")
+        sf.write(f"{file_path_out}_{tsm_factor}.wav", y, sr)
 
 def run_pitch_shift_test(x: np.ndarray, sr: int, file_path_out: str, ps: PitchShiftBase):  
     """
@@ -32,8 +32,8 @@ def run_pitch_shift_test(x: np.ndarray, sr: int, file_path_out: str, ps: PitchSh
     for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
         
         y = ps.pitch_shift(x, sr, ps_factor)
-        plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{file_path_out}_{ps_factor}.png")
-        sf.write(f"{file_path_out}_{ps_factor}.flac", y, sr)
+        # plotting.plot_audio_comparison(x, y, sr, f"Pitch Shift {ps_factor} st", save=True, filepath=f"{file_path_out}_{ps_factor}.png")
+        sf.write(f"{file_path_out}_{ps_factor}.wav", y, sr)
 
 def run_batch_tsm_test(input_dir: str, extension: str = "flac"):
     for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True):  # find all flac files in the input directory
@@ -70,21 +70,18 @@ def get_output_path_and_filename(mode: str, algorithm: str, input_file_path: str
 
 if __name__ == "__main__":
     ### Audio and plot measurments
-    create_directories(config.INPUT_DIR)
-    create_directories(config.INPUT_DIR, "wav")
+    input_dir = f"{config.INPUT_DIR}/wav48"
 
-    run_batch_tsm_test(config.INPUT_DIR)
-    run_batch_tsm_test(config.INPUT_DIR, "wav")
-
-    run_batch_ps_test(config.INPUT_DIR)    
-    run_batch_ps_test(config.INPUT_DIR, "wav")
+    create_directories(input_dir, "wav")
+    run_batch_tsm_test(input_dir, "wav")
+    run_batch_ps_test(input_dir, "wav")
 
     ### Performance measurments
-    perf.run_performance_test()
+    # perf.run_performance_test()
 
     ### Quality measurments
-    qual.run_speech_metrics()
-    qual.run_audio_metrics()
+    # qual.run_speech_metrics()
+    # qual.run_audio_metrics()
 
     
 

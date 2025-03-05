@@ -14,13 +14,6 @@ import matplotlib.pyplot as plt
 
 import audio_converter as ac
 
-def run_audio_metrics():
-    ### Fuzzy Energy
-    ### Estimate spectral envelopes
-    ### decay rate deviation (preservation of spectral characteristics)
-    ### Objective measure from AES
-    pass
-
 # ONLY FOR PITCH SHIFTING (does not work with different length signals)
 def run_stoi(output_file: str, algorithm_type: str, algorithm_name: str,
              root_dir_deg: str = ac.WAV_48K_DIR, root_dir_ref: str = config.INPUT_DIR):

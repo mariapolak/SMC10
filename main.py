@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 import performence_eval as perf
-import quality_eval as qual
+import quality_eval_speech as qual
 
 import config
 import librosa

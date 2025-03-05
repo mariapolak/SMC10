@@ -69,21 +69,19 @@ def get_output_path_and_filename(mode: str, algorithm: str, input_file_path: str
 
 
 if __name__ == "__main__":
-    ### Audio and plot measurments
+    ## Audio and plot measurments
     input_dir = f"{config.INPUT_DIR}/wav48"
 
     create_directories(input_dir, "wav")
     run_batch_tsm_test(input_dir, "wav")
     run_batch_ps_test(input_dir, "wav")
 
-    ### Performance measurments
+    # ## Performance measurments
     # perf.run_performance_test()
 
-    ### Quality measurments
+    # ## Quality measurments
     # qual.run_speech_metrics()
     # qual.run_audio_metrics()
-
-    
 
 
 

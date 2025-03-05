@@ -19,7 +19,7 @@ class NoiseMorphing(TimeStretchBase):
         [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
 
         xs_stretched = sines_stretching(xs, stretch_factor)
-        xt_stretched = transient_stretching(xt, stretch_factor)
+        xt_stretched = transient_stretching(xt, sr, stretch_factor)
         xn_stretched = noise_stretching(xn, stretch_factor)
 
         return xs_stretched + xt_stretched + xn_stretched
@@ -32,14 +32,42 @@ def sines_stretching(x: np.array, stretch_factor: float) -> np.array:
     y = tsm.phase_vocoder(x, stretch_factor, phase_lock=True)
     return y
 
-def transient_stretching(x: np.array, stretch_factor: float) -> np.array:
-    # detect transients in some way
-    # apply window around the transient (rectangular window with triangular edges 2ms before 10 ms after)
-    # cut it out
-    # interpolate what is left
-    # apply inverse window to the area where the transient is supposed to be placed
-    # place the transient there
-    pass
+def transient_stretching(x: np.array, sr: int, stretch_factor: float) -> np.array:
+    onsets = librosa.onset.onset_detect(y=x, sr=sr, units='samples', backtrack=True)
+    onsets = np.append(onsets, len(x)) # add the end of the signal
+
+    y = np.zeros(int(len(x) * stretch_factor))
+
+    pad_before = int(2e-3 * sr) # 2ms of padding in the beginning of the transient
+    pad_after = int(10e-3 * sr) # 10ms of padding at the end of the transient
+
+    for i in range(len(onsets) - 1):
+        start = onsets[i]
+        end = onsets[i+1]
+        length = end - start
+        
+        # window for the transient (rectangular window with triangular edges 2ms before 10 ms after)
+        window = np.array([])
+        if length < pad_before + pad_after: # if the transient is shorter than the padding - should not happen
+            window = np.ones(length)
+        else:
+            transient_length = length - pad_before - pad_after
+            window = np.linspace(0, 1, pad_before)
+            window = np.append(window, np.ones(transient_length))
+            window = np.append(window, np.linspace(1, 0, pad_after))    
+        
+        inv_window = 1 - window # inverse window
+
+        transient = x[start:end] * window # cut the transient out
+
+        start_stretched = int(start * stretch_factor)
+        end_stretched = min(start_stretched + length, len(y))
+        length_stretched = end_stretched - start_stretched
+
+        y[start_stretched:end_stretched] *= inv_window[:length_stretched] # apply inverse window to the area where the transient will be placed
+        y[start_stretched:end_stretched] += transient[:length_stretched] # place the transient
+    
+    return y
 
 def noise_stretching(x: np.array, stretch_factor: float) -> np.array:
     """
@@ -156,6 +184,3 @@ def noise_morphing(x: np.ndarray, original_signal_len: int, n_fft: int, window: 
     # multiply each frame of the white noise by the interpolated frame of the input's noise (x)
     return x * E # element wise multiplication
 
-if __name__ == "__main__":
-    x, sr = librosa.load("test.wav", sr=None)
-    time_stretch(x, sr)

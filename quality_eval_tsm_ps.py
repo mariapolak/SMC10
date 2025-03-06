@@ -92,10 +92,15 @@ def plot_fuzzy_energy(input: np.array, outputs: np.ndarray, outputs_names: list[
 
 # Metric for pitch shifting:
 def decay_rate_deviation(input: np.array, outputs: np.ndarray, outputs_names: list[str], sr: int):
+    def calculate_decay_rate(y:np.array,hop_length: int):
+        rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
+        # define decay rate as the rate of change of the RMS envelope
+        decay_rate = np.diff(rms, prepend=[0])
+        return decay_rate
     # Compute RMS envelope for input
     frame_length = 500
     hop_length = frame_length // 2
-    x_rms = librosa.feature.rms(y=input, frame_length=frame_length, hop_length=hop_length)[0]
+    x_rms = calculate_decay_rate(input, hop_length)
     times = librosa.frames_to_time(np.arange(len(x_rms)), sr=sr, hop_length=hop_length)
     
     decay_rates = {
@@ -107,14 +112,14 @@ def decay_rate_deviation(input: np.array, outputs: np.ndarray, outputs_names: li
     plt.plot(times, x_rms, color="r", label="RMS In Envelope")
 
     for output, name in zip(outputs, outputs_names):
-        y_rms = librosa.feature.rms(y=output, frame_length=frame_length, hop_length=hop_length)[0]
-        R_dr_L1 = np.linalg.norm((y_rms / x_rms) - 1, ord=2) # TODO find correct formula for decay rate deviation bc this is bollocks
+        y_rms = calculate_decay_rate(output, hop_length)
+        R_dr_L1 = np.linalg.norm((y_rms / x_rms) - 1, ord=2) # TODO talk about it with Cumhur
         decay_rates["name"].append(name)
         decay_rates["decay_rate_deviation"].append(R_dr_L1)
         plt.plot(times, y_rms, label=f"RMS Out Envelope - {name}")
 
     # Plot original audio in the background
-    plt.plot(np.linspace(0, len(input) / sr, len(input)), input, color="gray", alpha=0.5, label="Original Audio")
+    # plt.plot(np.linspace(0, len(input) / sr, len(input)), input, color="gray", alpha=0.5, label="Original Audio")
 
     plt.xlabel("Time (s)")
     plt.ylabel("Amplitude")
@@ -129,7 +134,7 @@ def spectral_envelopes_mse(input: np.array, outputs: np.ndarray, outputs_names: 
     # nice and all but if we just feed a not working algorithm that doesn't change the output at all, the mse will be 0
     def calculate_spectral_envelope(signal: np.array, sr: int):
         S = np.abs(librosa.stft(signal))
-        envelope = np.mean(S, axis=0)
+        envelope = np.max(S, axis=0)
         return envelope
 
     original_envelope = calculate_spectral_envelope(input, sr)
@@ -145,7 +150,7 @@ def spectral_envelopes_mse(input: np.array, outputs: np.ndarray, outputs_names: 
 
     for output, name in zip(outputs, outputs_names):
         output_envelope = calculate_spectral_envelope(output, sr)
-        mse = np.mean((original_envelope - output_envelope)**2)
+        mse = np.mean((output_envelope - original_envelope)**2)
         mse_values["name"].append(name)
         mse_values["mse"].append(mse)
         plt.plot(freqs, output_envelope, label=f"Spectral Envelope - {name}")
@@ -166,4 +171,4 @@ if __name__ == "__main__":
     y, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_12.flac", sr=None)
     y1, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_-12.flac", sr=None)
 
-    plot_fuzzy_energy(x, [y,y1], ["PSOLA", "PSOLA2"], sr)
+    decay_rate_deviation(x, [y,y1], ["PSOLA", "PSOLA2"], sr)

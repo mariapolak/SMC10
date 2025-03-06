@@ -18,11 +18,11 @@ def run_audio_metrics():
 
 def plot_fuzzy_energy(input: np.array, outputs: np.ndarray, outputs_names: list[str], sr: int):
     def get_fuzzy_energy(x: np.array, sr: int):
-        # TODO figure out how to get dB
         X = librosa.stft(x)
         Xn = np.abs(X)
         Y = np.sum(Xn**2, axis=0)
-        return Y
+        Y_db = librosa.power_to_db(Y, ref=np.max)
+        return Y_db
 
     nWin1 = 8192 # samples
     nWin2 = 512 # samples
@@ -63,26 +63,30 @@ def plot_fuzzy_energy(input: np.array, outputs: np.ndarray, outputs_names: list[
 
     time = np.linspace(0, len(input) / sr, len(df['sines'][0]))
 
-    plt.figure()
+    plt.figure(figsize=(10, 10))
     plt.subplot(3, 1, 1)
     for signal, name in zip(df['sines'], df['name']):
         plt.plot(time, signal, label=name)
-    plt.ylabel('Sines')
+    plt.title('Sines')
+    plt.ylabel('Energy (dB)')
     plt.legend()
 
     plt.subplot(3, 1, 2)
     for signal, name in zip(df['transients'], df['name']):
         plt.plot(time, signal, label=name)
-    plt.ylabel('Transients')
+    plt.title('Transients')
+    plt.ylabel('Energy (dB)')
     plt.legend()
 
     plt.subplot(3, 1, 3)
     for signal, name in zip(df['noise'], df['name']):
         plt.plot(time, signal, label=name)
-    plt.ylabel('Noise')
+    plt.title('Noise')
+    plt.ylabel('Energy (dB)')
     plt.legend()
 
     plt.xlabel('Time (s)')
+    plt.tight_layout()
     plt.show()
     
 
@@ -162,4 +166,4 @@ if __name__ == "__main__":
     y, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_12.flac", sr=None)
     y1, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_-12.flac", sr=None)
 
-    spectral_envelopes_mse(x, [y,y1], ["PSOLA", "PSOLA2"], sr)
+    plot_fuzzy_energy(x, [y,y1], ["PSOLA", "PSOLA2"], sr)

@@ -33,5 +33,6 @@ def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             sf.write(output_filepath, x_res, 16000)
             
 if __name__ == "__main__":
-    create_wav_16k("data/input/wav16", "data/input/wav48", ["wav"])
+    create_wav_16k("data/evaluation_short/output_tsm/16k", "data/evaluation_short/output_tsm/48k", ["wav"])
+    create_wav_16k("data/evaluation_short/output_ps/16k", "data/evaluation_short/output_ps/48k", ["wav"])
             

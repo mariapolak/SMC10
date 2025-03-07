@@ -16,3 +16,4 @@ cython
 audiobox_aesthetics
 pesq
 pystoi 
+torchmetrics

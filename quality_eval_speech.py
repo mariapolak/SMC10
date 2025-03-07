@@ -16,9 +16,19 @@ import matplotlib.pyplot as plt
 
 import audio_converter as ac
 
-# ONLY FOR PITCH SHIFTING (does not work with different length signals)
 def run_stoi(output_file: str, algorithm_type: str, algorithm_name: str,
              root_dir_deg: str = ac.WAV_48K_DIR, root_dir_ref: str = config.INPUT_DIR):
+    """ STOI - Short-Time Objective Intelligibility measure. 
+    48k, reference needed, reference of the same length as the degraded signal
+
+    Args:
+        output_file (str): Name of the output file
+        algorithm_type (str): PS/TSM
+        algorithm_name (str): Name of PS/TSM algorithm
+        root_dir_deg (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
+        root_dir_ref (str, optional): Root directory of reference signals. Defaults to config.INPUT_DIR.
+    """
+    
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
     results = []
@@ -36,6 +46,16 @@ def run_stoi(output_file: str, algorithm_type: str, algorithm_name: str,
 
 def run_pesq(output_file: str, algorithm_type: str, algorithm_name: str,
              root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = config.INPUT_DIR):
+    """ PESQ - Perceptual Evaluation of Speech Quality
+    16k, reference needed, reference of the same length as the degraded signal
+
+    Args:
+        output_file (str): Name of the output file
+        algorithm_type (str): PS/TSM
+        algorithm_name (str): Name of PS/TSM algorithm
+        root_dir_deg (str, optional): Root directory with transformed signals. Defaults to ac.WAV_16K_DIR.
+        root_dir_ref (str, optional): Root directory of reference signals. Defaults to config.INPUT_DIR.
+    """
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
     results = []
@@ -51,12 +71,12 @@ def run_pesq(output_file: str, algorithm_type: str, algorithm_name: str,
     df.to_csv(output_file, index=False)
 
 def prepare_audio_aesthetics_json(output_file: str, root_dir: str = ac.WAV_48K_DIR):
-    """
-    Prepare the audio aesthetics jsonl file for the audio aesthetics evaluation
-    jsonl format:
-    {"path":"/path/to/a.wav"}
-    {"path":"/path/to/b.wav"}
-    {"path":"/path/to/z.wav"}
+    """ Prepare the Audio Aesthetics JSON file for the evaluation
+    48k, no referrence needed
+
+    Args:
+        output_file (str): Name of the output jsonl file
+        root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
     """
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
@@ -66,8 +86,12 @@ def prepare_audio_aesthetics_json(output_file: str, root_dir: str = ac.WAV_48K_D
 
 
 def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
-    """
-    Prepare the NISQA csv file for the evaluation
+    """ Prepare the NISQA csv file for the evaluation
+    48k, no referrence needed
+
+    Args:
+        output_file (str): Name of the output csv file
+        root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
     """
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
@@ -76,11 +100,17 @@ def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
             f.write(f"{root_dir}/{audio_path}\n")
          
-# VISQOL - only for PS?  
+# VISQOL
 def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = f"{config.INPUT_DIR}/wav16"):
+    """ Prepare the VISQOL csv file for the evaluation
+    16k, reference needed, reference of the same length as the degraded signal
+
+    Args:
+        output_file (str): Name of the output csv file
+        root_dir_deg (str, optional): Root directory with transformed signals. Defaults to ac.WAV_16K_DIR.
+        root_dir_ref (str, optional): Root directory of reference signals. Defaults to config.INPUT_DIR/wav16.
     """
-    Prepare the VISQOL csv file for the evaluation
-    """
+    
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
     with open(output_file, "w") as f:
@@ -89,12 +119,6 @@ def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, roo
             f.write(f"/{root_dir_ref}/{audio_path},/{root_dir_deg}/{audio_path}\n")
 
 def plot_audio_aesthetics_results(jsonl_path: str):
-    # JSONL Description:
-    # Output file will contain the same number of rows as input.jsonl. Each row contains 4 axes of prediction with a JSON-formatted dictionary. 
-    # Check the following table for more info: Axes name | Full name |---|---| CE | Content Enjoyment CU | Content Usefulness PC | Production Complexity PQ | Production Quality
-    # Output line example: 
-    # {"CE": 5.146, "CU": 5.779, "PC": 2.148, "PQ": 7.220}
-
     # plot average value for each of the metrics
     ce_values = []
     cu_values = []
@@ -126,7 +150,18 @@ def plot_audio_aesthetics_results(jsonl_path: str):
     plt.show()
 
 def run_sisnr(output_file: str, algorithm_type: str, algorithm_name: str,
-             root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = config.INPUT_DIR):
+             root_dir_deg: str = ac.WAV_48K_DIR, root_dir_ref: str = config.INPUT_DIR):
+    """ Scale Invariant Signal Noise Ratio
+    48k, reference needed, reference of the same length as the degraded signal
+
+    Args:
+        output_file (str): Name of the output file
+        algorithm_type (str): PS/TSM
+        algorithm_name (str): Name of PS/TSM algorithm
+        root_dir_deg (str, optional): Root directory of transformend signals. Defaults to ac.WAV_48K_DIR.
+        root_dir_ref (str, optional): Root directory of reference signals. Defaults to config.INPUT_DIR.
+    """
+    
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     
     results = []
@@ -162,39 +197,25 @@ if __name__ == "__main__":
     nisqa_input_file = "evaluation/objective/nisqa/nisqa_input.csv"
 
     ### PS 
-    # print(" ===================== Running PS Evaluation ===================== ")
-    # print("Preparing Audio Aesthetics JSON")
-    # prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_PS_DIR_48k)
-    # print("Preparing VISQOL CSV")
-    # prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
-    # print("Preparing NISQA CSV")
-    # prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
-    # print("SISNR")
-    # run_sisnr(sinsr_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
-    # print("PESQ")
-    # run_pesq(pesq_output_file, "ps", "PSOLA", DEG_PS_DIR_16k, REF_DIR_16k)
-    # print("STOI")
-    # run_stoi(stoi_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
+    print(" ===================== Running PS Evaluation ===================== ")
+    print("Preparing Audio Aesthetics JSON")
+    prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_PS_DIR_48k)
+    print("Preparing VISQOL CSV")
+    prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
+    print("Preparing NISQA CSV")
+    prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
+    print("SISNR")
+    run_sisnr(sinsr_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
+    print("PESQ")
+    run_pesq(pesq_output_file, "ps", "PSOLA", DEG_PS_DIR_16k, REF_DIR_16k)
+    print("STOI")
+    run_stoi(stoi_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
     
-    # ### TSM
+    ### TSM
     print(" ===================== Running TSM Evaluation ===================== ")
     print("Preparing Audio Aesthetics JSON")
     prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_TSM_DIR_48k)
-    # print("Preparing VISQOL CSV") # TODO Needs same length audio
-    # prepare_visqol_csv(visqol_input_file, DEG_TSM_DIR_16k, REF_DIR_16k)
     print("Preparing NISQA CSV")
     prepare_nisqa_csv(nisqa_input_file, DEG_TSM_DIR_48k)
-    # print("SISNR")
-    # run_sisnr(sinsr_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k) # TODO Needs same length audio
-    # print("PESQ")
-    # run_pesq(pesq_output_file, "tsm", "HPS", DEG_TSM_DIR_16k, REF_DIR_16k) # TODO Needs same length audio
-    # print("STOI")
-    # run_stoi(stoi_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k) # TODO Needs same length audio
-
-    
-    # prepare_audio_aesthetics_json("evaluation/objective/aa/audio_aesthetics.jsonl") # run evaluation by `audio-aes input.jsonl --batch-size 100 > output.jsonl`
-    # prepare_nisqa_csv("evaluation/objective/nisqa/files.csv") # run evaluation by `python run_predict.py --mode predict_csv --pretrained_model weights/nisqa.tar --csv_file files.csv --csv_deg column_name_of_filepaths --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results`
-
-
 
             

@@ -62,7 +62,7 @@ def prepare_audio_aesthetics_json(output_file: str, root_dir: str = ac.WAV_48K_D
     
     with open(output_file, "w") as f:
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
-            f.write(f'{{"path":"{audio_path}"}}\n')
+            f.write(f'{{"path":"{root_dir}/{audio_path}"}}\n')
 
 
 def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
@@ -74,7 +74,7 @@ def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
     with open(output_file, "w") as f:
         f.write("path\n")
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
-            f.write(f"{audio_path}\n")
+            f.write(f"{root_dir}/{audio_path}\n")
          
 # VISQOL - only for PS?  
 def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = f"{config.INPUT_DIR}/wav16"):
@@ -86,7 +86,7 @@ def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, roo
     with open(output_file, "w") as f:
         f.write("path\n")
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir_ref, recursive=True): 
-            f.write(f"{root_dir_ref}/{audio_path}, {root_dir_deg}/{audio_path}\n")
+            f.write(f"/{root_dir_ref}/{audio_path},/{root_dir_deg}/{audio_path}\n")
 
 def plot_audio_aesthetics_results(jsonl_path: str):
     # JSONL Description:

@@ -162,28 +162,35 @@ if __name__ == "__main__":
     nisqa_input_file = "evaluation/objective/nisqa/nisqa_input.csv"
 
     ### PS 
-    print(" ===================== Running PS Evaluation ===================== ")
-    print("Preparing Audio Aesthetics JSON")
-    prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_PS_DIR_48k)
-    print("Preparing VISQOL CSV")
-    prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
-    print("Preparing NISQA CSV")
-    prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
-    print("SISNR")
-    run_sisnr(sinsr_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
-    print("PESQ")
-    run_pesq(pesq_output_file, "ps", "PSOLA", DEG_PS_DIR_16k, REF_DIR_16k)
-    print("STOI")
-    run_stoi(stoi_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
+    # print(" ===================== Running PS Evaluation ===================== ")
+    # print("Preparing Audio Aesthetics JSON")
+    # prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_PS_DIR_48k)
+    # print("Preparing VISQOL CSV")
+    # prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
+    # print("Preparing NISQA CSV")
+    # prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
+    # print("SISNR")
+    # run_sisnr(sinsr_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
+    # print("PESQ")
+    # run_pesq(pesq_output_file, "ps", "PSOLA", DEG_PS_DIR_16k, REF_DIR_16k)
+    # print("STOI")
+    # run_stoi(stoi_output_file, "ps", "PSOLA", DEG_PS_DIR_48k, REF_DIR_48k)
     
     # ### TSM
-    # print(" ===================== Running TSM Evaluation ===================== ")
-    # run_sisnr(sinsr_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k)
-    # run_pesq(pesq_output_file, "tsm", "HPS", DEG_TSM_DIR_16k, REF_DIR_16k)
-    # run_stoi(stoi_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k)
-    # prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_TSM_DIR_48k)
+    print(" ===================== Running TSM Evaluation ===================== ")
+    print("Preparing Audio Aesthetics JSON")
+    prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_TSM_DIR_48k)
+    # print("Preparing VISQOL CSV") # TODO Needs same length audio
     # prepare_visqol_csv(visqol_input_file, DEG_TSM_DIR_16k, REF_DIR_16k)
-    # prepare_nisqa_csv(nisqa_input_file, DEG_TSM_DIR_48k)
+    print("Preparing NISQA CSV")
+    prepare_nisqa_csv(nisqa_input_file, DEG_TSM_DIR_48k)
+    # print("SISNR")
+    # run_sisnr(sinsr_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k) # TODO Needs same length audio
+    # print("PESQ")
+    # run_pesq(pesq_output_file, "tsm", "HPS", DEG_TSM_DIR_16k, REF_DIR_16k) # TODO Needs same length audio
+    # print("STOI")
+    # run_stoi(stoi_output_file, "tsm", "HPS", DEG_TSM_DIR_48k, REF_DIR_48k) # TODO Needs same length audio
+
     
     # prepare_audio_aesthetics_json("evaluation/objective/aa/audio_aesthetics.jsonl") # run evaluation by `audio-aes input.jsonl --batch-size 100 > output.jsonl`
     # prepare_nisqa_csv("evaluation/objective/nisqa/files.csv") # run evaluation by `python run_predict.py --mode predict_csv --pretrained_model weights/nisqa.tar --csv_file files.csv --csv_deg column_name_of_filepaths --num_workers 0 --bs 10 --output_dir /path/to/dir/with/results`

@@ -95,7 +95,7 @@ def decay_rate_deviation(input: np.array, outputs: np.ndarray, outputs_names: li
     def calculate_decay_rate(y:np.array,hop_length: int):
         rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
         # define decay rate as the rate of change of the RMS envelope
-        decay_rate = np.diff(rms, prepend=[0])
+        decay_rate = np.abs(np.diff(rms, prepend=[0]))
         return decay_rate
     # Compute RMS envelope for input
     frame_length = 500
@@ -109,14 +109,14 @@ def decay_rate_deviation(input: np.array, outputs: np.ndarray, outputs_names: li
     }
 
     plt.figure(figsize=(10, 5))
-    plt.plot(times, x_rms, color="r", label="RMS In Envelope")
+    plt.plot(times, x_rms, color="r", label="Decay Rate Input")
 
     for output, name in zip(outputs, outputs_names):
         y_rms = calculate_decay_rate(output, hop_length)
-        R_dr_L1 = np.linalg.norm((y_rms / x_rms) - 1, ord=2) # TODO talk about it with Cumhur
+        R_dr_L1 = np.mean((y_rms / x_rms) - 1)
         decay_rates["name"].append(name)
         decay_rates["decay_rate_deviation"].append(R_dr_L1)
-        plt.plot(times, y_rms, label=f"RMS Out Envelope - {name}")
+        plt.plot(times, y_rms, label=f"Decay Rate - {name}")
 
     # Plot original audio in the background
     # plt.plot(np.linspace(0, len(input) / sr, len(input)), input, color="gray", alpha=0.5, label="Original Audio")
@@ -128,7 +128,7 @@ def decay_rate_deviation(input: np.array, outputs: np.ndarray, outputs_names: li
     plt.show()
 
     for name, rate in zip(decay_rates["name"], decay_rates["decay_rate_deviation"]):
-        print(f"Decay Rate Deviation (L1 Norm) for {name}: {rate}")
+        print(f"Decay Rate Deviation for {name}: {rate}")
 
 def spectral_envelopes_mse(input: np.array, outputs: np.ndarray, outputs_names: list[str], sr: int):
     # nice and all but if we just feed a not working algorithm that doesn't change the output at all, the mse will be 0
@@ -167,8 +167,8 @@ def spectral_envelopes_mse(input: np.array, outputs: np.ndarray, outputs_names: 
 
 
 if __name__ == "__main__":
-    x, sr = librosa.load(f"data\input\p227\p227_001_mic1.flac", sr=None)
-    y, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_12.flac", sr=None)
-    y1, sr = librosa.load(f"data\output_2502270954\ps\PSOLA\p227\p227_001_mic1_-12.flac", sr=None)
+    x, sr = librosa.load(f"data/evaluation_short/input/48k/p225_001.wav", sr=None)
+    y, sr = librosa.load(f"data/evaluation_short/output_ps/48k/p225_001.wav", sr=None)
+    # y1, sr = librosa.load(f"data/evaluation_short/output_ps/48k/p225_002.wav", sr=None)
 
-    decay_rate_deviation(x, [y,y1], ["PSOLA", "PSOLA2"], sr)
+    decay_rate_deviation(x, [y], ["PSOLA"], sr)

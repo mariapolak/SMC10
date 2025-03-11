@@ -72,9 +72,9 @@ if __name__ == "__main__":
     ## Audio and plot measurments
     input_dir = f"{config.INPUT_DIR}/wav48"
 
-    create_directories(input_dir, "wav")
-    run_batch_tsm_test(input_dir, "wav")
-    run_batch_ps_test(input_dir, "wav")
+    # create_directories(input_dir, "wav")
+    # run_batch_tsm_test(input_dir, "wav")
+    # run_batch_ps_test(input_dir, "wav")
 
     # ## Performance measurments
     # perf.run_performance_test()

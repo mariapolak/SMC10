@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 
 import audio_converter as ac
 
-
-
+# won't be used
 def run_scoreq(output_file: str, algorithm_type: str, algorithm_name: str,
                root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = config.INPUT_DIR):
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     results = []
 
     nr_scoreq = scoreq.Scoreq(data_domain='natural', mode='nr') # Predict quality of natural speech in NR mode

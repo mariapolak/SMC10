@@ -7,3 +7,6 @@
 [submodule "tsm/tsm_net"]
 	path = tsm/tsm_net
 	url = https://huggingface.co/spaces/ernestchu/tsm-net
+[submodule "ps/pv_dr"]
+	path = ps/pv_dr
+	url = https://github.com/mp-smc23/ba21_loma_2_py.git

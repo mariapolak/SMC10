@@ -1,10 +1,40 @@
+from modules.NM.nm import noise_stretching
+from modules.decomposeSTN import decomposeSTN as STN
 from .pitch_shift_base import PitchShiftBase
+
 import numpy as np
+import librosa
 
 class NoiseMorphingPS(PitchShiftBase):
+    def __init__(self):
+        self.nWin1 = 8192   # samples
+        self.nWin2 = 512    # samples
+        
     def pitch_shift(self, input: np.array, sr: int, shift_factor_st: float) -> np.array:
-        pass
+        [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
+
+        shift_factor = self.pitch_factor_st_to_linear(shift_factor_st)
+
+        xs_shifted = sines_shifting(xs, shift_factor_st)
+        xt_shifted = transient_shifting(xt, sr, shift_factor_st)
+        xn_shifted = noise_shifting(xn, sr, shift_factor)
+
+        return xs_shifted + xt_shifted + xn_shifted
 
     @property
     def name(self):
         return "NMPS"
+
+def sines_shifting(x: np.array, sr: int, shift_factor_st: float) -> np.array:
+    y = librosa.effects.pitch_shift(x, sr=sr, n_steps=shift_factor_st)
+    return y
+
+def transient_shifting(x: np.array, sr: int, shift_factor_st: float) -> np.array:
+    return x
+
+def noise_shifting(x: np.array, sr: int, shift_factor: float) -> np.array:
+    stretch_factor = 1 / shift_factor
+    
+    xn_stretched = noise_stretching(x, stretch_factor)
+    xn_shifted = librosa.resample(xn_stretched, orig_sr=sr*shift_factor, target_sr=sr)
+    return xn_shifted

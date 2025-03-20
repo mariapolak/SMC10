@@ -14,15 +14,16 @@ def noise_stretching(x: np.array, stretch_factor: float) -> np.array:
     Returns:
     np.array: The noise-stretched audio signal.
     """
+    y_len = int(np.ceil(len(x) * stretch_factor))
     fft_size = window_size = 2048
     hop = fft_size // 2
     window = np.hanning(window_size)
 
     # Compute the STFT of x
-    X = librosa.stft(x, n_fft=fft_size, hop_length=hop, window=window)
+    X = librosa.stft(x, n_fft=fft_size, hop_length=hop, window=window, center=False)
 
     Xn_db = 10 * np.log10(np.abs(X)) # log-magnitude spectrum
-    Xn_stretched_db = frames_interpolation(Xn_db, stretch_factor) # interpolate log-magnitude spectrum
+    Xn_stretched_db = frames_interpolation(Xn_db, stretch_factor, y_len=y_len, n_fft=fft_size, hop_size=hop) # interpolate log-magnitude spectrum
     Xn_stretched = 10**(Xn_stretched_db / 10) # inverse log-magnitude spectrum
 
     Yn_stretched = noise_morphing(
@@ -34,10 +35,10 @@ def noise_stretching(x: np.array, stretch_factor: float) -> np.array:
         stretch_factor=stretch_factor) # morph with white noise
 
     # Compute the ISTFT of the stretched noise
-    y = librosa.istft(Yn_stretched, n_fft=fft_size, hop_length=hop, window=window)
+    y = librosa.istft(Yn_stretched, n_fft=fft_size, hop_length=hop, window=window, center=False, length=y_len)
     return y
 
-def frames_interpolation(X: np.ndarray, stretch_factor: float) -> np.ndarray:
+def frames_interpolation(X: np.ndarray, stretch_factor: float, y_len: int, n_fft: int, hop_size: int) -> np.ndarray:
     """ Linearly interpolates the log-magnitude spectrum is then according to the stretching factor based on the two neighboring spectra, occurring before and after the interpolation point.
 
     Args:
@@ -47,13 +48,10 @@ def frames_interpolation(X: np.ndarray, stretch_factor: float) -> np.ndarray:
     Returns:
         np.ndarray: Stretched log-magnitude spectrum
     """
-
+    print(stretch_factor)
     x_len = X.shape[1] # number of frames
-    x_stretched_len = int(np.ceil(x_len * stretch_factor)) # number of frames after stretching 
-    
-    if stretch_factor > 1: # fixing stft padding
-        x_stretched_len -= 1
 
+    x_stretched_len = 1 + int((y_len - n_fft) / hop_size) # number of frames in the stretched signal
     x_stretched = np.zeros((X.shape[0], x_stretched_len)) # output array
 
     # Boundries
@@ -74,7 +72,7 @@ def frames_interpolation(X: np.ndarray, stretch_factor: float) -> np.ndarray:
 
     # Interpolation
     for i in range(1, x_stretched_len-1):
-        while i > next_idx:
+        while i > next_idx and j < len(stretched_indices) - 1:
             j += 1
 
             prev_idx = next_idx
@@ -110,7 +108,11 @@ def noise_morphing(x: np.ndarray, original_signal_len: int, n_fft: int, window: 
     white_noise = np.random.normal(0, 1, int(np.ceil(original_signal_len*stretch_factor))) # generate white noise
     white_noise = white_noise / np.max(np.abs(white_noise)) # normalize it
 
-    E = librosa.stft(white_noise, n_fft=n_fft, hop_length=hop_length, window=window) # run STFT on it 
+    E = librosa.stft(white_noise, n_fft=n_fft, hop_length=hop_length, window=window, center=False) # run STFT on it 
+    print("whte noise shape", white_noise.shape)
+    print(E.shape)
+    print(x.shape)
+    
     assert E.shape[1] == x.shape[1]
 
     E = E / np.sqrt(np.sum(window**2)) # normalize by the window energy to ensure spectral magnitude equals 1

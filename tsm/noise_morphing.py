@@ -37,7 +37,7 @@ def transient_stretching(x: np.array, sr: int, stretch_factor: float) -> np.arra
     onsets = librosa.onset.onset_detect(y=x, sr=sr, units='samples', backtrack=True)
     onsets = np.append(onsets, len(x)) # add the end of the signal
 
-    y = np.zeros(int(len(x) * stretch_factor))
+    y = np.zeros(int(np.ceil(len(x) * stretch_factor)))
 
     pad_before = int(2e-3 * sr) # 2ms of padding in the beginning of the transient
     pad_after = int(10e-3 * sr) # 10ms of padding at the end of the transient

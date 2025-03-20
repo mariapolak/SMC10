@@ -14,8 +14,8 @@ class NoiseMorphingPS(PitchShiftBase):
         [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
 
         shift_factor = self.pitch_factor_st_to_linear(shift_factor_st)
-
-        xs_shifted = sines_shifting(xs, shift_factor_st)
+        
+        xs_shifted = sines_shifting(xs, sr, shift_factor_st)
         xt_shifted = transient_shifting(xt, sr, shift_factor_st)
         xn_shifted = noise_shifting(xn, sr, shift_factor)
 
@@ -33,8 +33,13 @@ def transient_shifting(x: np.array, sr: int, shift_factor_st: float) -> np.array
     return x
 
 def noise_shifting(x: np.array, sr: int, shift_factor: float) -> np.array:
-    stretch_factor = 1 / shift_factor
-    
-    xn_stretched = noise_stretching(x, stretch_factor)
+    xn_stretched = noise_stretching(x, shift_factor)
     xn_shifted = librosa.resample(xn_stretched, orig_sr=sr*shift_factor, target_sr=sr)
+    
+    # trim the noise signal to the length of the input signal
+    if len(xn_shifted) > len(x):
+        xn_shifted = xn_shifted[:len(x)]
+    else:
+        xn_shifted = np.pad(xn_shifted, (0, len(x) - len(xn_shifted)))
+    
     return xn_shifted

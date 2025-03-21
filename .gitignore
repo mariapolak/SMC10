@@ -177,3 +177,4 @@ data/output_*
 *flac
 .DS_Store
 pt-models/wav2vec_small.pt
+output.zip

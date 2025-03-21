@@ -12,13 +12,17 @@ class NoiseMorphingPS(PitchShiftBase):
         
     def pitch_shift(self, input: np.array, sr: int, shift_factor_st: float) -> np.array:
         [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
-
+        xs = align_length(len(input), xs)
+        xt = align_length(len(input), xt)
+        xn = align_length(len(input), xn)
+        
+        print(input.shape, xs.shape)
         shift_factor = self.pitch_factor_st_to_linear(shift_factor_st)
         
         xs_shifted = sines_shifting(xs, sr, shift_factor_st)
         xt_shifted = transient_shifting(xt, sr, shift_factor_st)
         xn_shifted = noise_shifting(xn, sr, shift_factor)
-
+        print(input.shape, xs_shifted.shape)
         return xs_shifted + xt_shifted + xn_shifted
 
     @property
@@ -36,10 +40,12 @@ def noise_shifting(x: np.array, sr: int, shift_factor: float) -> np.array:
     xn_stretched = noise_stretching(x, shift_factor)
     xn_shifted = librosa.resample(xn_stretched, orig_sr=sr*shift_factor, target_sr=sr)
     
-    # trim the noise signal to the length of the input signal
-    if len(xn_shifted) > len(x):
-        xn_shifted = xn_shifted[:len(x)]
-    else:
-        xn_shifted = np.pad(xn_shifted, (0, len(x) - len(xn_shifted)))
+    xn_shifted = align_length(len(x), xn_shifted) # trim the noise signal to the length of the input signal
     
     return xn_shifted
+
+def align_length(length: int, x: np.array):
+    if len(x) > length:
+        return x[:length]
+    else:
+        return np.pad(x, (0, length - len(x)))

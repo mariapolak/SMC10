@@ -48,7 +48,6 @@ def frames_interpolation(X: np.ndarray, stretch_factor: float, y_len: int, n_fft
     Returns:
         np.ndarray: Stretched log-magnitude spectrum
     """
-    print(stretch_factor)
     x_len = X.shape[1] # number of frames
 
     x_stretched_len = 1 + int((y_len - n_fft) / hop_size) # number of frames in the stretched signal
@@ -109,9 +108,6 @@ def noise_morphing(x: np.ndarray, original_signal_len: int, n_fft: int, window: 
     white_noise = white_noise / np.max(np.abs(white_noise)) # normalize it
 
     E = librosa.stft(white_noise, n_fft=n_fft, hop_length=hop_length, window=window, center=False) # run STFT on it 
-    print("whte noise shape", white_noise.shape)
-    print(E.shape)
-    print(x.shape)
     
     assert E.shape[1] == x.shape[1]
 

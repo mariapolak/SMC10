@@ -8,6 +8,7 @@ import librosa
 import glob
 import json
 import torch
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -84,6 +85,23 @@ def prepare_audio_aesthetics_json(output_file: str, root_dir: str = ac.WAV_48K_D
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
             f.write(f'{{"path":"{root_dir}/{audio_path}"}}\n')
 
+def run_audio_aesthetics(input_file:str, output_file: str, root_dir: str = ac.WAV_48K_DIR):
+    """ Run the Audio Aesthetics evaluation
+    48k, no referrence needed
+    
+    Args:
+        output_file (str): Name of the output jsonl file
+        root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
+    """
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    
+    prepare_audio_aesthetics_json(input_file, root_dir)
+    
+    # audio-aes evaluation/objective/audio_aesthetics/audio_aesthetics_input.jsonl --batch-size 100 > evaluation/objective/audio_aesthetics/output.jsonl 
+    with open(output_file, "w") as out_f:
+        subprocess.run(["audio-aes", input_file, "--batch-size", "100"], stdout=out_f)
+        
+    Path(input_file).unlink() # delete the input file
 
 def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
     """ Prepare the NISQA csv file for the evaluation
@@ -99,7 +117,7 @@ def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
         f.write("path\n")
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
             f.write(f"{root_dir}/{audio_path}\n")
-         
+        
 # VISQOL
 def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = f"{config.INPUT_DIR}/wav16"):
     """ Prepare the VISQOL csv file for the evaluation
@@ -175,8 +193,6 @@ def run_sisnr(output_file: str, algorithm_type: str, algorithm_name: str, factor
 
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
-    
-# TODO: run all on what I already have and then write scripts for plotting all the results
 
 def run_all():
     REF_DIR_16k = "data/input/wav16"
@@ -188,21 +204,36 @@ def run_all():
     print(" ===================== Running TSM Evaluation ===================== ")
     
     for tsm_algorithm in config.TSM_ALGORITHMS:
-        for tsm_factor in [0.5]: # config.ALGORITHM_FACTORS["tsm_factors"]
+        for tsm_factor in config.ALGORITHM_FACTORS["tsm_factors"]:
+            DEG_TSM_DIR_16k = f"{DEG_PARENT_DIR_16k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             DEG_TSM_DIR_48k = f"{DEG_PARENT_DIR_48k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
-
-            audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_input_{tsm_algorithm.name}_{tsm_factor}.jsonl"
+            
+            sinsr_output_file = f"evaluation/objective/sisnr/sisnr_{tsm_algorithm.name}_{tsm_factor}.csv"
+            pesq_output_file = f"evaluation/objective/pesq/pesq_{tsm_algorithm.name}_{tsm_factor}.csv"
+            stoi_output_file = f"evaluation/objective/stoi/stoi_{tsm_algorithm.name}_{tsm_factor}.csv"
+            
+            audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{tsm_algorithm.name}_{tsm_factor}_input.jsonl"
+            audio_aeaesthetics_output_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{tsm_algorithm.name}_{tsm_factor}.jsonl"
+            visqol_input_file = f"evaluation/objective/visqol/visqol_input_{tsm_algorithm.name}_{tsm_factor}.csv"
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{tsm_algorithm.name}_{tsm_factor}.csv"
-
+            
             print("Preparing Audio Aesthetics JSON")
-            prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_TSM_DIR_48k)
+            run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_TSM_DIR_48k)
+            print("Preparing VISQOL CSV")
+            prepare_visqol_csv(visqol_input_file, DEG_TSM_DIR_16k, REF_DIR_16k)
             print("Preparing NISQA CSV")
             prepare_nisqa_csv(nisqa_input_file, DEG_TSM_DIR_48k)
+            print("SISNR")
+            run_sisnr(sinsr_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
+            print("PESQ")
+            run_pesq(pesq_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_16k, REF_DIR_16k)
+            print("STOI")
+            run_stoi(stoi_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
     
     print(" ===================== Running PS Evaluation ===================== ")
           
     for ps_algorithm in config.PS_ALGORITHMS:
-        for ps_factor in [-12]: # config.ALGORITHM_FACTORS["ps_factors"]
+        for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
             DEG_PS_DIR_16k = f"{DEG_PARENT_DIR_16k}/ps/{ps_algorithm.name}/{ps_factor}"
             DEG_PS_DIR_48k = f"{DEG_PARENT_DIR_48k}/ps/{ps_algorithm.name}/{ps_factor}"
             
@@ -210,22 +241,23 @@ def run_all():
             pesq_output_file = f"evaluation/objective/pesq/pesq_{ps_algorithm.name}_{ps_factor}.csv"
             stoi_output_file = f"evaluation/objective/stoi/stoi_{ps_algorithm.name}_{ps_factor}.csv"
             
-            audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_input_{ps_algorithm.name}_{ps_factor}.jsonl"
+            audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}_input.jsonl"
+            audio_aeaesthetics_output_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}.jsonl"
             visqol_input_file = f"evaluation/objective/visqol/visqol_input_{ps_algorithm.name}_{ps_factor}.csv"
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{ps_algorithm.name}_{ps_factor}.csv"
             
             print("Preparing Audio Aesthetics JSON")
-            prepare_audio_aesthetics_json(audio_aeaesthetics_input_file, DEG_PS_DIR_48k)
+            run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_PS_DIR_48k)
             print("Preparing VISQOL CSV")
             prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
             print("Preparing NISQA CSV")
             prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
             print("SISNR")
-            run_sisnr(sinsr_output_file, "ps", {ps_algorithm.name}, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
+            run_sisnr(sinsr_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
             print("PESQ")
-            run_pesq(pesq_output_file, "ps", {ps_algorithm.name}, ps_factor, DEG_PS_DIR_16k, REF_DIR_16k)
+            run_pesq(pesq_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_16k, REF_DIR_16k)
             print("STOI")
-            run_stoi(stoi_output_file, "ps", {ps_algorithm.name}, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
+            run_stoi(stoi_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
             
 
 if __name__ == "__main__":

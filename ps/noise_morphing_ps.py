@@ -16,13 +16,12 @@ class NoiseMorphingPS(PitchShiftBase):
         xt = align_length(len(input), xt)
         xn = align_length(len(input), xn)
         
-        print(input.shape, xs.shape)
         shift_factor = self.pitch_factor_st_to_linear(shift_factor_st)
         
         xs_shifted = sines_shifting(xs, sr, shift_factor_st)
         xt_shifted = transient_shifting(xt, sr, shift_factor_st)
         xn_shifted = noise_shifting(xn, sr, shift_factor)
-        print(input.shape, xs_shifted.shape)
+
         return xs_shifted + xt_shifted + xn_shifted
 
     @property

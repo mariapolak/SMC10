@@ -101,6 +101,16 @@ def run_audio_aesthetics(input_file:str, output_file: str, root_dir: str = ac.WA
     with open(output_file, "w") as out_f:
         subprocess.run(["audio-aes", input_file, "--batch-size", "100"], stdout=out_f)
         
+    # Read JSON lines files
+    df_1 = pd.read_json(output_file, lines=True)
+    df_2 = pd.read_json(input_file, lines=True)
+
+    # Concatenate the dataframes
+    df = pd.concat([df_2, df_1], axis=1)
+
+    # Save the combined dataframe to a new JSON lines file
+    df.to_json(output_file, orient='records', lines=True)
+    
     Path(input_file).unlink() # delete the input file
 
 def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
@@ -117,9 +127,38 @@ def prepare_nisqa_csv(output_file: str, root_dir: str = ac.WAV_48K_DIR):
         f.write("path\n")
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir, recursive=True): 
             f.write(f"{root_dir}/{audio_path}\n")
+
+def run_nisqa(input_file:str, output_file_tts: str, output_file: str, root_dir: str = ac.WAV_48K_DIR):
+    """ Run the NISQA evaluation
+    48k, no referrence needed
+    
+    Args:
+        input_file (str): Name of the input csv file
+        output_file (str): Name of the output csv file
+        root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
+    """
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    
+    prepare_nisqa_csv(input_file, root_dir)
+
+    # python evaluation/NISQA/run_predict.py --mode predict_csv --pretrained_model evaluation/NISQA/weights/nisqa_tts.tar --csv_file evaluation/objective/nisqa/nisqa_input.csv --csv_deg path --num_workers 0 --bs 10 --output_dir evaluation/objective/nisqa/
+    # TTS
+    subprocess.run(["python", "evaluation/NISQA/run_predict.py", "--mode", "predict_csv", "--pretrained_model", "evaluation/NISQA/weights/nisqa_tts.tar", 
+                    "--csv_file", input_file, "--csv_deg", "path", "--num_workers", "0", "--bs", "10", "--output_dir", "evaluation/objective/nisqa/"], stdout = subprocess.DEVNULL)
+    
+    # rename results.csv to output_file_tts.csv
+    Path("evaluation/objective/nisqa/NISQA_results.csv").rename(output_file_tts)
+    
+    # python evaluation/NISQA/run_predict.py --mode predict_csv --pretrained_model evaluation/NISQA/weights/nisqa.tar --csv_file evaluation/objective/nisqa/nisqa_input.csv --csv_deg path --num_workers 0 --bs 10 --output_dir evaluation/objective/nisqa/
+    # REF DEG
+    subprocess.run(["python", "evaluation/NISQA/run_predict.py", "--mode", "predict_csv", "--pretrained_model", "evaluation/NISQA/weights/nisqa.tar",
+                    "--csv_file", input_file, "--csv_deg", "path", "--num_workers", "0", "--bs", "10", "--output_dir", "evaluation/objective/nisqa/"], stdout = subprocess.DEVNULL)
+    Path("evaluation/objective/nisqa/NISQA_results.csv").rename(output_file)
+        
+    Path(input_file).unlink() # delete the input file 
         
 # VISQOL
-def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = f"{config.INPUT_DIR}/wav16"):
+def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = ac.WAV_16K_DIR):
     """ Prepare the VISQOL csv file for the evaluation
     16k, reference needed, reference of the same length as the degraded signal
 
@@ -135,6 +174,27 @@ def prepare_visqol_csv(output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, roo
         f.write("path\n")
         for audio_path in glob.iglob(f"**/*.wav", root_dir=root_dir_ref, recursive=True): 
             f.write(f"/{root_dir_ref}/{audio_path},/{root_dir_deg}/{audio_path}\n")
+
+def run_visqol(input_file:str, output_file: str, root_dir_deg: str = ac.WAV_16K_DIR, root_dir_ref: str = ac.WAV_16K_DIR):
+    """ Run the Audio Aesthetics evaluation
+    48k, no referrence needed
+    
+    Args:
+        output_file (str): Name of the output jsonl file
+        root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
+    """
+    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    
+    prepare_visqol_csv(input_file, root_dir_deg, root_dir_ref)
+    # docker run -it -v ./data:/data -v ./evaluation:/evaluation mubtasimahasan/visqol:v3 \                                                              (smc10) 
+                                        #   --batch_input_csv /evaluation/objective/visqol/visqol_input.csv \
+                                        #   --results_csv /evaluation/objective/visqol/visqol_results.csv \
+                                        #   --use_speech_mode
+    with open(output_file, "w") as out_f:
+        subprocess.run(["docker", "run", "-v", "./data:/data", "-v", "./evaluation:/evaluation", "mubtasimahasan/visqol:v3",
+                        "--batch_input_csv", f"/{input_file}", "--results_csv", f"/{output_file}", "--use_speech_mode"], stdout = subprocess.DEVNULL)
+        
+    Path(input_file).unlink() # delete the input file
 
 def plot_audio_aesthetics_results(jsonl_path: str):
     # plot average value for each of the metrics
@@ -205,6 +265,8 @@ def run_all():
     
     for tsm_algorithm in config.TSM_ALGORITHMS:
         for tsm_factor in config.ALGORITHM_FACTORS["tsm_factors"]:
+            print(f"Running Evaluation of TSM: {tsm_algorithm.name} with factor: {tsm_factor}")
+            
             DEG_TSM_DIR_16k = f"{DEG_PARENT_DIR_16k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             DEG_TSM_DIR_48k = f"{DEG_PARENT_DIR_48k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             
@@ -214,15 +276,20 @@ def run_all():
             
             audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{tsm_algorithm.name}_{tsm_factor}_input.jsonl"
             audio_aeaesthetics_output_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{tsm_algorithm.name}_{tsm_factor}.jsonl"
-            visqol_input_file = f"evaluation/objective/visqol/visqol_input_{tsm_algorithm.name}_{tsm_factor}.csv"
-            nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{tsm_algorithm.name}_{tsm_factor}.csv"
             
+            visqol_input_file = f"evaluation/objective/visqol/visqol_input_{tsm_algorithm.name}_{tsm_factor}.csv"
+            visqol_output_file = f"evaluation/objective/visqol/visqol_{tsm_algorithm.name}_{tsm_factor}.csv"
+            
+            nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{tsm_algorithm.name}_{tsm_factor}.csv"
+            nisqa_output_file_tts = f"evaluation/objective/nisqa/nisqa_{tsm_algorithm.name}_{tsm_factor}_tts.csv"
+            nisqa_output_file = f"evaluation/objective/nisqa/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
+
             print("Preparing Audio Aesthetics JSON")
             run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_TSM_DIR_48k)
             print("Preparing VISQOL CSV")
-            prepare_visqol_csv(visqol_input_file, DEG_TSM_DIR_16k, REF_DIR_16k)
+            run_visqol(visqol_input_file, visqol_output_file, DEG_TSM_DIR_16k, REF_DIR_16k)
             print("Preparing NISQA CSV")
-            prepare_nisqa_csv(nisqa_input_file, DEG_TSM_DIR_48k)
+            run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_TSM_DIR_48k)
             print("SISNR")
             run_sisnr(sinsr_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
             print("PESQ")
@@ -234,6 +301,8 @@ def run_all():
           
     for ps_algorithm in config.PS_ALGORITHMS:
         for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
+            print(f"Running Evaluation of PS: {ps_algorithm.name} with factor: {ps_factor}")
+            
             DEG_PS_DIR_16k = f"{DEG_PARENT_DIR_16k}/ps/{ps_algorithm.name}/{ps_factor}"
             DEG_PS_DIR_48k = f"{DEG_PARENT_DIR_48k}/ps/{ps_algorithm.name}/{ps_factor}"
             
@@ -243,15 +312,20 @@ def run_all():
             
             audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}_input.jsonl"
             audio_aeaesthetics_output_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}.jsonl"
+                        
             visqol_input_file = f"evaluation/objective/visqol/visqol_input_{ps_algorithm.name}_{ps_factor}.csv"
+            visqol_output_file = f"evaluation/objective/visqol/visqol_{ps_algorithm.name}_{ps_factor}.csv"
+            
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{ps_algorithm.name}_{ps_factor}.csv"
+            nisqa_output_file_tts = f"evaluation/objective/nisqa/nisqa_{ps_algorithm.name}_{ps_factor}_tts.csv"
+            nisqa_output_file = f"evaluation/objective/nisqa/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
             
             print("Preparing Audio Aesthetics JSON")
             run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_PS_DIR_48k)
             print("Preparing VISQOL CSV")
-            prepare_visqol_csv(visqol_input_file, DEG_PS_DIR_16k, REF_DIR_16k)
+            run_visqol(visqol_input_file, visqol_output_file, DEG_PS_DIR_16k, REF_DIR_16k)
             print("Preparing NISQA CSV")
-            prepare_nisqa_csv(nisqa_input_file, DEG_PS_DIR_48k)
+            run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_PS_DIR_48k)
             print("SISNR")
             run_sisnr(sinsr_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
             print("PESQ")

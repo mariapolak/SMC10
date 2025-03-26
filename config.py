@@ -1,4 +1,4 @@
-from tsm import harmonic_percussive_separation, noise_morphing, phase_vocoder, tsm_net_wrapper
+from tsm import harmonic_percussive_separation, noise_morphing, phase_vocoder, tsm_net_wrapper, resampling_tsm
 from ps import noise_morphing_ps, phase_vocoder_ps, psola
 
 from datetime import datetime
@@ -18,5 +18,5 @@ ALGORITHM_FACTORS = {
 }
 
 TIMESTAMP = datetime.now().strftime("%y%m%d%H%M")
-TSM_ALGORITHMS = [harmonic_percussive_separation.HPS(), phase_vocoder.PV(), tsm_net_wrapper.TSMNET(), noise_morphing.NoiseMorphing()]
+TSM_ALGORITHMS = [harmonic_percussive_separation.HPS(), phase_vocoder.PV(), tsm_net_wrapper.TSMNET(), noise_morphing.NoiseMorphing(), resampling_tsm.ResamplingTSM()]
 PS_ALGORITHMS = [psola.TDPSOLA(), phase_vocoder_ps.PV(), noise_morphing_ps.NoiseMorphingPS()]

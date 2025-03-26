@@ -9,6 +9,7 @@ import numpy as np
 import soundfile as sf
 import performence_eval as perf
 import quality_eval_speech as qual
+import audio_converter as ac
 
 import config
 import librosa
@@ -58,22 +59,30 @@ def create_directories(input_dir: str, extension: str = "flac"):
 
 def get_output_path_and_filename(mode: str, algorithm: str, factor: int, input_file_path: str) -> tuple[str, str]:
     input_file_path_dir = Path(input_file_path).parent
-    return f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/{mode}/{algorithm}/{factor}/{input_file_path_dir}", Path(input_file_path).stem
+    return f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/wav48/{mode}/{algorithm}/{factor}/{input_file_path_dir}", Path(input_file_path).stem
 
 
 def sanity_check():    
-    x, sr = librosa.load("data/input/wav48/p225/p225_159.wav", sr=None)
+    import sounddevice as sd
+    
+    x, sr = librosa.load(f"{config.INPUT_DIR}/wav48/p225/p225_039.wav", sr=None)
     
     for tsm_algorithm in config.TSM_ALGORITHMS:
         for tsm_factor in config.ALGORITHM_FACTORS["tsm_factors"]:
-            y = tsm_algorithm.time_stretch(x, sr, tsm_factor)
+            if tsm_factor == "rt_up":
+                y_tmp = tsm_algorithm.time_stretch(x, sr, 2)
+                print("y_tmp", y_tmp.shape)
+                y = tsm_algorithm.time_stretch(y_tmp, sr, 0.5)
+                print("y", y.shape)
+            else:
+                y = tsm_algorithm.time_stretch(x, sr, tsm_factor)
         
-    for ps_algorithm in config.PS_ALGORITHMS:
-        for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
-            y = ps_algorithm.pitch_shift(x, sr, ps_factor)
+    # for ps_algorithm in config.PS_ALGORITHMS:
+    #     for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
+    #         y = ps_algorithm.pitch_shift(x, sr, ps_factor)
 
 if __name__ == "__main__":
-    ## Audio and plot measurments
+    ### Audio and plot measurments
     input_dir = f"{config.INPUT_DIR}/wav48"
 
     create_directories(input_dir, "wav")
@@ -83,7 +92,8 @@ if __name__ == "__main__":
     print("Running batch pitch-shifting")
     run_batch_ps_test(input_dir, "wav")
     
-    
+    ac.create_wav_16k(f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/wav16", f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/wav48", ["wav"])
+    # sanity_check()
 
 
 

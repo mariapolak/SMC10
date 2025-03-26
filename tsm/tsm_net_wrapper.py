@@ -34,9 +34,18 @@ class TSMNET(TimeStretchBase):
         y = y.numpy()
         y = y.squeeze(0)
         y = nr.reduce_noise(y=y, sr=sr)
-    
+        
+        y = align_length(y, int(np.ceil(len(input) * stretch_factor)))
+        
         return y
 
     @property
     def name(self):
         return "TSMNET"
+    
+def align_length(x: np.array, desired_length: int) -> np.array:
+    if len(x) < desired_length:
+        x = np.pad(x, (0, desired_length - len(x)))
+    elif len(x) > desired_length:
+        x = x[:desired_length]
+    return x

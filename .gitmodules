@@ -1,6 +1,3 @@
-[submodule "modules/decomposeSTN"]
-	path = modules/decomposeSTN
-	url = https://github.com/himynameisfuego/decomposeSTN.git
 [submodule "evaluation/NISQA"]
 	path = evaluation/NISQA
 	url = https://github.com/gabrielmittag/NISQA.git
@@ -10,3 +7,6 @@
 [submodule "ps/pv_dr"]
 	path = ps/pv_dr
 	url = https://github.com/mp-smc23/ba21_loma_2_py.git
+[submodule "modules/decomposeSTN"]
+	path = modules/decomposeSTN
+	url = https://github.com/mp-smc23/decomposeSTN.git

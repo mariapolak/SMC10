@@ -38,5 +38,5 @@ class PV(PitchShiftBase):
     
     @property
     def name(self):
-        return "PV"
+        return "PVPS"
     

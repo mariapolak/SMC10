@@ -15,6 +15,9 @@ import config
 import librosa
 import glob
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def run_batch_tsm_test(input_dir: str, extension: str = "flac"):
     for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True):  # find all flac files in the input directory
@@ -23,11 +26,16 @@ def run_batch_tsm_test(input_dir: str, extension: str = "flac"):
         for tsm_algorithm in config.TSM_ALGORITHMS:            # test each time-stretching algorithm on the audio file
             for tsm_factor in config.ALGORITHM_FACTORS["tsm_factors"]:
                 output_filepath, filename = get_output_path_and_filename("tsm", tsm_algorithm.name, tsm_factor, audio_path)
-                if tsm_factor == "rt_up":
-                    y_tmp = tsm_algorithm.time_stretch(x, sr, 2)
-                    y = tsm_algorithm.time_stretch(y_tmp, sr, 0.5)
-                else: 
-                    y = tsm_algorithm.time_stretch(x, sr, tsm_factor)
+                try:
+                    if tsm_factor == "rt_up":
+                        y_tmp = tsm_algorithm.time_stretch(x, sr, 2)
+                        y = tsm_algorithm.time_stretch(y_tmp, sr, 0.5)
+                    else: 
+                        y = tsm_algorithm.time_stretch(x, sr, tsm_factor)
+                except librosa.ParameterError:
+                    logger.error(f"ParameterError: {tsm_algorithm.name} {tsm_factor} {audio_path}")
+                except RuntimeError as e:
+                    logger.error(f"RuntimeError: {tsm_algorithm.name} {tsm_factor} {audio_path}")
                 sf.write(f"{output_filepath}/{filename}.wav", y, sr)
 
 
@@ -38,11 +46,16 @@ def run_batch_ps_test(input_dir: str, extension: str = "flac"):
         for ps_algorithm in config.PS_ALGORITHMS: # test each pitch-shifting algorithm on the audio file
             for ps_factor in config.ALGORITHM_FACTORS["ps_factors"]:
                 output_filepath, filename = get_output_path_and_filename("ps", ps_algorithm.name, ps_factor, audio_path)
-                if ps_factor == "rt_up":
-                    y_tmp = ps_algorithm.pitch_shift(x, sr, 12)
-                    y = ps_algorithm.pitch_shift(y_tmp, sr, -12)
-                else:  
-                    y = ps_algorithm.pitch_shift(x, sr, ps_factor)
+                try:
+                    if ps_factor == "rt_up":
+                        y_tmp = ps_algorithm.pitch_shift(x, sr, 12)
+                        y = ps_algorithm.pitch_shift(y_tmp, sr, -12)
+                    else:  
+                        y = ps_algorithm.pitch_shift(x, sr, ps_factor)
+                except librosa.ParameterError:
+                    logger.error(f"ParameterError: {ps_algorithm.name} {ps_factor} {audio_path}")
+                except RuntimeError as e:
+                    logger.error(f"RuntimeError: {ps_algorithm.name} {ps_factor} {audio_path}")
                 sf.write(f"{output_filepath}/{filename}.wav", y, sr)
 
 
@@ -86,6 +99,8 @@ if __name__ == "__main__":
     input_dir = f"{config.INPUT_DIR}/wav48"
 
     create_directories(input_dir, "wav")
+    logging.basicConfig(filename=f'{config.OUTPUT_DIR}_{config.TIMESTAMP}/run_tsm_ps.log', encoding='utf-8', level=logging.WARNING)
+    
     print("Running batch time-stretching")
     run_batch_tsm_test(input_dir, "wav")
     

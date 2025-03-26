@@ -138,6 +138,7 @@ def run_nisqa(input_file:str, output_file_tts: str, output_file: str, root_dir: 
         root_dir (str, optional): Root directory with transformed signals. Defaults to ac.WAV_48K_DIR.
     """
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_file_tts).parent.mkdir(parents=True, exist_ok=True)
     
     prepare_nisqa_csv(input_file, root_dir)
 
@@ -317,8 +318,8 @@ def run_all():
             visqol_output_file = f"evaluation/objective/visqol/visqol_{ps_algorithm.name}_{ps_factor}.csv"
             
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{ps_algorithm.name}_{ps_factor}.csv"
-            nisqa_output_file_tts = f"evaluation/objective/nisqa/nisqa_{ps_algorithm.name}_{ps_factor}_tts.csv"
-            nisqa_output_file = f"evaluation/objective/nisqa/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
+            nisqa_output_file_tts = f"evaluation/objective/nisqa/tts/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
+            nisqa_output_file = f"evaluation/objective/nisqa/std/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
             
             print("Preparing Audio Aesthetics JSON")
             run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_PS_DIR_48k)

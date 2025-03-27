@@ -13,8 +13,8 @@ crepe
 tensorflow
 sounddevice
 cython
-audiobox_aesthetics
 pesq
 pystoi 
 torchmetrics
 noisereduce
+safetensors

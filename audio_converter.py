@@ -7,8 +7,8 @@ import glob
 import pandas as pd
 import soundfile as sf
 
-WAV_48K_DIR = f"{config.EVAL_DATA_DIR}/wav_48k"
-WAV_16K_DIR = f"{config.EVAL_DATA_DIR}/wav_16k"
+WAV_48K_DIR = f"{config.EVAL_DATA_DIR}/wav48"
+WAV_16K_DIR = f"{config.EVAL_DATA_DIR}/wav16"
 
 
 def create_wav_48k(output_dir: str, input_dir: str, extensions: list[str] = ["flac", "wav"]):
@@ -34,6 +34,5 @@ def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             
 if __name__ == "__main__":
     create_wav_16k("data/output/wav16", "data/output/wav48", ["wav"])
-    # create_wav_16k("data/input/wav16", "data/input/wav48", ["wav"])
-    # create_wav_16k("data/evaluation_short/output_ps/16k", "data/evaluation_short/output_ps/48k", ["wav"])
+    create_wav_16k("data/input/wav16", "data/input/wav48", ["wav"])
             

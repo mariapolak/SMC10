@@ -99,7 +99,7 @@ def run_audio_aesthetics(input_file:str, output_file: str, root_dir: str = ac.WA
     
     # audio-aes evaluation/objective/audio_aesthetics/audio_aesthetics_input.jsonl --batch-size 100 > evaluation/objective/audio_aesthetics/output.jsonl 
     with open(output_file, "w") as out_f:
-        subprocess.run(["audio-aes", input_file, "--batch-size", "100"], stdout=out_f)
+        subprocess.run(["audio-aes", input_file, "--batch-size", "70"], stdout=out_f)
         
     # Read JSON lines files
     df_1 = pd.read_json(output_file, lines=True)
@@ -192,7 +192,7 @@ def run_visqol(input_file:str, output_file: str, root_dir_deg: str = ac.WAV_16K_
                                         #   --results_csv /evaluation/objective/visqol/visqol_results.csv \
                                         #   --use_speech_mode
     with open(output_file, "w") as out_f:
-        subprocess.run(["docker", "run", "-v", "./data:/data", "-v", "./evaluation:/evaluation", "mubtasimahasan/visqol:v3",
+        subprocess.run(["docker", "run", "--gpus=all", "-v", "./data:/data", "-v", "./evaluation:/evaluation", "mubtasimahasan/visqol:v3",
                         "--batch_input_csv", f"/{input_file}", "--results_csv", f"/{output_file}", "--use_speech_mode"], stdout = subprocess.DEVNULL)
         
     Path(input_file).unlink() # delete the input file
@@ -282,8 +282,8 @@ def run_all():
             visqol_output_file = f"evaluation/objective/visqol/visqol_{tsm_algorithm.name}_{tsm_factor}.csv"
             
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{tsm_algorithm.name}_{tsm_factor}.csv"
-            nisqa_output_file_tts = f"evaluation/objective/nisqa/nisqa_{tsm_algorithm.name}_{tsm_factor}_tts.csv"
-            nisqa_output_file = f"evaluation/objective/nisqa/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
+            nisqa_output_file_tts = f"evaluation/objective/nisqa/tts/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
+            nisqa_output_file = f"evaluation/objective/nisqa/std/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
 
             print("Preparing Audio Aesthetics JSON")
             run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_TSM_DIR_48k)

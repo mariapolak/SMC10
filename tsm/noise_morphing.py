@@ -16,9 +16,9 @@ class NoiseMorphing(TimeStretchBase):
         self.nWin1 = 8192 # samples
         self.nWin2 = 512 # samples
 
-    def time_stretch(self, input: np.array, sr: int, stretch_factor: float) -> np.array:
-        [xs, xt, xn] = STN.decSTN(input, sr, self.nWin1, self.nWin2)
-
+    def time_stretch(self, x: np.array, sr: int, stretch_factor: float) -> np.array:
+        [xs, xt, xn] = STN.decSTN(x, sr, self.nWin1, self.nWin2)
+        
         xs_stretched = sines_stretching(xs, stretch_factor)
         xt_stretched = transient_stretching(xt, sr, stretch_factor)
         xn_stretched = noise_stretching(xn, stretch_factor)
@@ -69,4 +69,3 @@ def transient_stretching(x: np.array, sr: int, stretch_factor: float) -> np.arra
         y[start_stretched:end_stretched] += transient[:length_stretched] # place the transient
     
     return y
-

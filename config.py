@@ -13,10 +13,21 @@ SPEED_ITERATIONS = 10
 MEMORY_ITERATIONS = 2
 
 ALGORITHM_FACTORS = {
-    "tsm_factors": [0.5, "rt_up", "rt_down", 2], # [0.75,0.85,1.35,1.25,1.5,2]
-    "ps_factors": [-12, "rt_up", "rt_down", 12] # [-7,-1,1,3,7,12]
+    "tsm_factors": [0.75,0.85,1.35,1.25,1.5,2], #[0.5, "rt_up", "rt_down", 2], # 
+    "ps_factors": [-7,-1,1,3,7,12], #[-12, "rt_up", "rt_down", 12] # 
+}
+
+NO_REFERENCE_FACTORS = {
+    "tsm_factors": [0.5, 1.5, 2], 
+    "ps_factors": [-12, 7, 12] 
+}
+
+REFERENCE_FACTORS = {
+    "tsm_factors": ["rt_up", "rt_down"], 
+    "ps_factors": ["rt_up", "rt_down"], 
 }
 
 TIMESTAMP = datetime.now().strftime("%y%m%d%H%M")
 TSM_ALGORITHMS = [harmonic_percussive_separation.HPS(), phase_vocoder.PV(), tsm_net_wrapper.TSMNET(), noise_morphing.NoiseMorphing(), resampling_tsm.ResamplingTSM()]
 PS_ALGORITHMS = [psola.TDPSOLA(), phase_vocoder_ps.PV(), noise_morphing_ps.NoiseMorphingPS(), librosa_ps.LibrosaPS()]
+

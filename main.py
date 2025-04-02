@@ -41,8 +41,8 @@ def run_batch_tsm_test(input_dir: str, extension: str = "flac"):
             thread.start()
 
     for thread in threads:  # wait for all threads to complete
-        logging.info(f"Thread {thread.name} finished")
         thread.join()
+        logging.info(f"Thread {thread.name} finished")
 
 def run_batch_ps_test(input_dir: str, extension: str = "flac"):
     def process_ps_algorithm_and_factor(ps_algorithm, ps_factor):
@@ -74,8 +74,8 @@ def run_batch_ps_test(input_dir: str, extension: str = "flac"):
             thread.start()
 
     for thread in threads:  # wait for all threads to complete
-        logging.info(f"Thread {thread.name} finished")
         thread.join()
+        logging.info(f"Thread {thread.name} finished")
 
 
 def create_directories(input_dir: str, extension: str = "flac"):

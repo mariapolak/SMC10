@@ -20,7 +20,7 @@ def noise_stretching(x: np.array, stretch_factor: float) -> np.array:
     window = np.hanning(window_size)
 
     # Compute the STFT of x
-    X = librosa.stft(x, n_fft=fft_size, hop_length=hop, window=window, center=False)
+    X = librosa.stft(x, n_fft=fft_size, hop_length=hop, window=window)
 
     Xn_db = 10 * np.log10(np.abs(X)) # log-magnitude spectrum
     Xn_stretched_db = frames_interpolation(Xn_db, stretch_factor, y_len=y_len, n_fft=fft_size, hop_size=hop) # interpolate log-magnitude spectrum
@@ -35,7 +35,7 @@ def noise_stretching(x: np.array, stretch_factor: float) -> np.array:
         stretch_factor=stretch_factor) # morph with white noise
 
     # Compute the ISTFT of the stretched noise
-    y = librosa.istft(Yn_stretched, n_fft=fft_size, hop_length=hop, window=window, center=False, length=y_len)
+    y = librosa.istft(Yn_stretched, n_fft=fft_size, hop_length=hop, window=window, length=y_len)
     return y
 
 def frames_interpolation(X: np.ndarray, stretch_factor: float, y_len: int, n_fft: int, hop_size: int) -> np.ndarray:
@@ -50,7 +50,7 @@ def frames_interpolation(X: np.ndarray, stretch_factor: float, y_len: int, n_fft
     """
     x_len = X.shape[1] # number of frames
 
-    x_stretched_len = 1 + int((y_len - n_fft) / hop_size) # number of frames in the stretched signal
+    x_stretched_len = 1 + int((y_len) / hop_size) # number of frames in the stretched signal
     x_stretched = np.zeros((X.shape[0], x_stretched_len)) # output array
 
     # Boundries
@@ -107,8 +107,7 @@ def noise_morphing(x: np.ndarray, original_signal_len: int, n_fft: int, window: 
     white_noise = np.random.normal(0, 1, int(np.ceil(original_signal_len*stretch_factor))) # generate white noise
     white_noise = white_noise / np.max(np.abs(white_noise)) # normalize it
 
-    E = librosa.stft(white_noise, n_fft=n_fft, hop_length=hop_length, window=window, center=False) # run STFT on it 
-    
+    E = librosa.stft(white_noise, n_fft=n_fft, hop_length=hop_length, window=window) # run STFT on it 
     assert E.shape[1] == x.shape[1]
 
     E = E / np.sqrt(np.sum(window**2)) # normalize by the window energy to ensure spectral magnitude equals 1

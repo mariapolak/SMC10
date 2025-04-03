@@ -118,7 +118,13 @@ if __name__ == "__main__":
     input_dir = f"{config.INPUT_DIR}/wav48"
 
     create_directories(input_dir, "wav")
-    logging.basicConfig(filename=f'{config.OUTPUT_DIR}_{config.TIMESTAMP}/run_tsm_ps.log', encoding='utf-8', level=logging.INFO)
+    logging.basicConfig(
+        filename=f'{config.OUTPUT_DIR}_{config.TIMESTAMP}/run_tsm_ps.log',
+        encoding='utf-8',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
 
     logging.info("Running batch time-stretching")
     run_batch_tsm_test(input_dir, "wav")

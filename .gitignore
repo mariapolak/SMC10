@@ -178,3 +178,4 @@ data/output_*
 .DS_Store
 pt-models/wav2vec_small.pt
 output.zip
+output.tar.gz

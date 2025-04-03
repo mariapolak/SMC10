@@ -4,7 +4,9 @@ import glob
 import os
 import soundfile as sf
 import matplotlib.pyplot as plt
-
+import logging 
+from pathlib import Path
+import config
 # for each directory in "wav/tests"
 # read all the wav files
 # and pad them with 0 to the same length (max length)
@@ -48,23 +50,61 @@ def pad_wav_files_in_directory(directory):
         # Save the padded wav file
         print(f"Writing {wav_file}")
         sf.write(wav_file, y, sr)
-        
+
+def assert_length_input_output():
+    Path("evaluation/objective/").mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        filename=f'evaluation/audio_padding_{config.TIMESTAMP}.log',
+        encoding='utf-8',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    REF_DIR_48k = "data/input/wav48"
+    DEG_PARENT_DIR_48k = "data/output/wav48"
+
+    for audio_path in glob.iglob(f"**/*.wav", root_dir=REF_DIR_48k, recursive=True): 
+        for tsm_algorithm in config.TSM_ALGORITHMS:
+            for tsm_factor in config.REFERENCE_FACTORS["tsm_factors"]:
+                DEG_TSM_DIR_48k = f"{DEG_PARENT_DIR_48k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
+
+                infile = f"{REF_DIR_48k}/{audio_path}"
+                outfile = f"{DEG_TSM_DIR_48k}/{audio_path}"
+
+                x, sr = librosa.load(infile, sr=None)
+                y, sr = librosa.load(outfile, sr=None)
+
+                if len(x) == len(y):
+                    continue
+
+                logging.info(f" TSM Algo {tsm_algorithm.name} | Tsm factor {tsm_factor} | Padding {outfile} | Original length: {len(y)} samples | Target length: {len(x)} samples")
+                if len(x) < len(y):
+                    y = y[:len(x)]
+                elif len(x) > len(y):
+                    y = np.pad(y, (0, len(x) - len(y)), 'constant')
+                
+                sf.write(outfile, y, sr)
+
 # for each directory in "wav/tests"
-print("Processing directories...")
-for dir in glob.glob("assets/wav/trainig/*"):
-    # check if the directory is a directory
-    if os.path.isdir(dir):
-        # pad the wav files in the directory
-        pad_wav_files_in_directory(dir)
-        print(f"Processed directory: {dir}")
-    else:
-        print(f"Skipped non-directory: {dir}")
+# print("Processing directories...")
+# for dir in glob.glob("assets/wav/trainig/*"):
+#     # check if the directory is a directory
+#     if os.path.isdir(dir):
+#         # pad the wav files in the directory
+#         pad_wav_files_in_directory(dir)
+#         print(f"Processed directory: {dir}")
+#     else:
+#         print(f"Skipped non-directory: {dir}")
         
-for dir in glob.glob("assets/wav/tests/*"):
-    # check if the directory is a directory
-    if os.path.isdir(dir):
-        # pad the wav files in the directory
-        pad_wav_files_in_directory(dir)
-        print(f"Processed directory: {dir}")
-    else:
-        print(f"Skipped non-directory: {dir}")
+# for dir in glob.glob("assets/wav/tests/*"):
+#     # check if the directory is a directory
+#     if os.path.isdir(dir):
+#         # pad the wav files in the directory
+#         pad_wav_files_in_directory(dir)
+#         print(f"Processed directory: {dir}")
+#     else:
+#         print(f"Skipped non-directory: {dir}")
+
+
+

@@ -9,6 +9,7 @@ import glob
 import json
 import torch
 import subprocess
+import logging
 
 import numpy as np
 import pandas as pd
@@ -99,7 +100,7 @@ def run_audio_aesthetics(input_file:str, output_file: str, root_dir: str = ac.WA
     
     # audio-aes evaluation/objective/audio_aesthetics/audio_aesthetics_input.jsonl --batch-size 100 > evaluation/objective/audio_aesthetics/output.jsonl 
     with open(output_file, "w") as out_f:
-        subprocess.run(["audio-aes", input_file, "--batch-size", "70"], stdout=out_f)
+        subprocess.run(["audio-aes", input_file, "--batch-size", "10"], stdout=out_f)
         
     # Read JSON lines files
     df_1 = pd.read_json(output_file, lines=True)
@@ -254,7 +255,6 @@ def run_sisnr(output_file: str, algorithm_type: str, algorithm_name: str, factor
 
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
-
 def run_all():
     REF_DIR_16k = "data/input/wav16"
     REF_DIR_48k = "data/input/wav48"
@@ -262,12 +262,12 @@ def run_all():
     DEG_PARENT_DIR_16k = "data/output/wav16"
     DEG_PARENT_DIR_48k = "data/output/wav48"
     
-    print(" ===================== Running TSM Evaluation ===================== ")
+    logging.info(" ===================== Running TSM Evaluation ===================== ")
     
     for tsm_algorithm in config.TSM_ALGORITHMS:
         ## audio_aesthetics and nisqa no ref
         for tsm_factor in config.NO_REFERENCE_FACTORS["tsm_factors"]:
-            print(f"Running Evaluation of TSM: {tsm_algorithm.name} with factor: {tsm_factor}")
+            logging.info(f"Running Evaluation of TSM: {tsm_algorithm.name} with factor: {tsm_factor}")
             DEG_TSM_DIR_16k = f"{DEG_PARENT_DIR_16k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             DEG_TSM_DIR_48k = f"{DEG_PARENT_DIR_48k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             
@@ -278,15 +278,24 @@ def run_all():
             nisqa_output_file_tts = f"evaluation/objective/nisqa/tts/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
             nisqa_output_file = f"evaluation/objective/nisqa/std/nisqa_{tsm_algorithm.name}_{tsm_factor}.csv"
             
-            print("Preparing Audio Aesthetics JSON")
-            run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_TSM_DIR_48k)
+            try:    
+                logging.info("Preparing Audio Aesthetics JSON")
+                run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_TSM_DIR_48k) 
+            except Exception as e:
+                logging.error(f"Error in Audio Aesthetics: {e}")
+                continue
             
-            print("Preparing NISQA CSV")
-            run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_TSM_DIR_48k)
+            try:
+                logging.info("Preparing NISQA CSV")
+                run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_TSM_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in NISQA: {e}")
+                continue
+            
             
         ## sisnr, pesq, stoi, visqol with ref
         for tsm_factor in config.REFERENCE_FACTORS["tsm_factors"]:
-            print(f"Running Evaluation of TSM: {tsm_algorithm.name} with factor: {tsm_factor}")
+            logging.info(f"Running Evaluation of TSM: {tsm_algorithm.name} with factor: {tsm_factor}")
             
             DEG_TSM_DIR_16k = f"{DEG_PARENT_DIR_16k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
             DEG_TSM_DIR_48k = f"{DEG_PARENT_DIR_48k}/tsm/{tsm_algorithm.name}/{tsm_factor}"
@@ -298,41 +307,68 @@ def run_all():
             visqol_input_file = f"evaluation/objective/visqol/visqol_input_{tsm_algorithm.name}_{tsm_factor}.csv"
             visqol_output_file = f"evaluation/objective/visqol/visqol_{tsm_algorithm.name}_{tsm_factor}.csv"
 
-            print("Preparing VISQOL CSV")
-            run_visqol(visqol_input_file, visqol_output_file, DEG_TSM_DIR_16k, REF_DIR_16k)
-            print("SISNR")
-            run_sisnr(sinsr_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
-            print("PESQ")
-            run_pesq(pesq_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_16k, REF_DIR_16k)
-            print("STOI")
-            run_stoi(stoi_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
+            try:
+                logging.info("Preparing VISQOL CSV")
+                run_visqol(visqol_input_file, visqol_output_file, DEG_TSM_DIR_16k, REF_DIR_16k)
+            except Exception as e:
+                logging.error(f"Error in VISQOL: {e}")
+                continue
+
+            try:
+                logging.info("SISNR")
+                run_sisnr(sinsr_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in SISNR: {e}")
+                continue
+
+            try:
+                logging.info("PESQ")
+                run_pesq(pesq_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_16k, REF_DIR_16k)
+            except Exception as e:
+                logging.error(f"Error in PESQ: {e}")
+                continue
+
+            try:
+                logging.info("STOI")
+                run_stoi(stoi_output_file, "tsm", tsm_algorithm.name, tsm_factor, DEG_TSM_DIR_48k, REF_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in STOI: {e}")
+                continue
     
-    print(" ===================== Running PS Evaluation ===================== ")
-          
+    logging.info(" ===================== Running PS Evaluation ===================== ")
+            
     for ps_algorithm in config.PS_ALGORITHMS:
         ## audio_aesthetics and nisqa no ref
         for ps_factor in config.NO_REFERENCE_FACTORS["ps_factors"]:
-            print(f"Running Evaluation of PS: {ps_algorithm.name} with factor: {ps_factor}")
+            logging.info(f"Running Evaluation of PS: {ps_algorithm.name} with factor: {ps_factor}")
             
             DEG_PS_DIR_16k = f"{DEG_PARENT_DIR_16k}/ps/{ps_algorithm.name}/{ps_factor}"
             DEG_PS_DIR_48k = f"{DEG_PARENT_DIR_48k}/ps/{ps_algorithm.name}/{ps_factor}"
-                     
+                        
             audio_aeaesthetics_input_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}_input.jsonl"
             audio_aeaesthetics_output_file = f"evaluation/objective/audio_aesthetics/audio_aesthetics_{ps_algorithm.name}_{ps_factor}.jsonl"
             
             nisqa_input_file = f"evaluation/objective/nisqa/nisqa_input_{ps_algorithm.name}_{ps_factor}.csv"
             nisqa_output_file_tts = f"evaluation/objective/nisqa/tts/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
             nisqa_output_file = f"evaluation/objective/nisqa/std/nisqa_{ps_algorithm.name}_{ps_factor}.csv"
-                  
-            print("Preparing Audio Aesthetics JSON")
-            run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_PS_DIR_48k)
+
+            try:
+                logging.info("Preparing Audio Aesthetics JSON")
+                run_audio_aesthetics(audio_aeaesthetics_input_file, audio_aeaesthetics_output_file, DEG_PS_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in Audio Aesthetics: {e}")
+                continue
             
-            print("Preparing NISQA CSV")
-            run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_PS_DIR_48k)
-                 
+            try:
+                logging.info("Preparing NISQA CSV")
+                run_nisqa(nisqa_input_file, nisqa_output_file_tts, nisqa_output_file, DEG_PS_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in NISQA: {e}")
+                continue
+                    
         ## sisnr, pesq, stoi, visqol with ref  
         for ps_factor in config.REFERENCE_FACTORS["ps_factors"]:
-            print(f"Running Evaluation of PS: {ps_algorithm.name} with factor: {ps_factor}")
+            logging.info(f"Running Evaluation of PS: {ps_algorithm.name} with factor: {ps_factor}")
             
             DEG_PS_DIR_16k = f"{DEG_PARENT_DIR_16k}/ps/{ps_algorithm.name}/{ps_factor}"
             DEG_PS_DIR_48k = f"{DEG_PARENT_DIR_48k}/ps/{ps_algorithm.name}/{ps_factor}"
@@ -344,17 +380,44 @@ def run_all():
             visqol_input_file = f"evaluation/objective/visqol/visqol_input_{ps_algorithm.name}_{ps_factor}.csv"
             visqol_output_file = f"evaluation/objective/visqol/visqol_{ps_algorithm.name}_{ps_factor}.csv"
 
-            print("Preparing VISQOL CSV")
-            run_visqol(visqol_input_file, visqol_output_file, DEG_PS_DIR_16k, REF_DIR_16k)
-            print("SISNR")
-            run_sisnr(sinsr_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
-            print("PESQ")
-            run_pesq(pesq_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_16k, REF_DIR_16k)
-            print("STOI")
-            run_stoi(stoi_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
-            
+            try:
+                logging.info("Preparing VISQOL CSV")
+                run_visqol(visqol_input_file, visqol_output_file, DEG_PS_DIR_16k, REF_DIR_16k)
+            except Exception as e:
+                logging.error(f"Error in VISQOL: {e}")
+                continue
+
+            try:
+                logging.info("SISNR")
+                run_sisnr(sinsr_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in SISNR: {e}")
+                continue
+
+            try:
+                logging.info("PESQ")
+                run_pesq(pesq_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_16k, REF_DIR_16k)
+            except Exception as e:
+                logging.error(f"Error in PESQ: {e}")
+                continue
+
+            try:
+                logging.info("STOI")
+                run_stoi(stoi_output_file, "ps", ps_algorithm.name, ps_factor, DEG_PS_DIR_48k, REF_DIR_48k)
+            except Exception as e:
+                logging.error(f"Error in STOI: {e}")
+                continue
 
 if __name__ == "__main__":
+    Path("evaluation/objective/").mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        filename=f'evaluation/run_eval_speech_{config.TIMESTAMP}.log',
+        encoding='utf-8',
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
     run_all()
 
             

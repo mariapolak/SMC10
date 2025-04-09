@@ -9,8 +9,8 @@ EVAL_OBJ_DIR = "evaluation/objective"
 EVAL_SUBJ_DIR = "evaluation/subjective"
 EVAL_DATA_DIR = "data/input"
 
-SPEED_ITERATIONS = 10
-MEMORY_ITERATIONS = 2
+SPEED_ITERATIONS = 50
+MEMORY_ITERATIONS = 5
 
 ALGORITHM_FACTORS = {
     "tsm_factors": [0.75,0.85,1.35,1.25,1.5,2], #[0.5, "rt_up", "rt_down", 2], # 

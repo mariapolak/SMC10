@@ -3,7 +3,6 @@ from modules.decomposeSTN import decomposeSTN as STN
 
 import config
 import librosa
-import glob
 import json
 
 import numpy as np
@@ -13,8 +12,41 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import zoom
 
 def run_audio_metrics():
-    ### Objective measure from AES
-    pass
+    files = ["p225/p225_020,wav", "p226/p226_020.wav", "p227/p227_020.wav"]
+    for file in files:
+        input_path = Path(f"{config.INPUT_DIR}/wav48/{file}")
+        x, sr = librosa.load(input_path, sr=None)
+        
+        for factor in config.REFERENCE_FACTORS["tsm_factors"]:
+            ys_tsm = []
+            tsm_algorithms = []
+            for tsm_algorithm in config.TSM_ALGORITHMS:
+                output_path = Path(f"{config.OUTPUT_DIR}/wav48/tsm/{tsm_algorithm.name}/{factor}/{file}")
+                y_tmp, sr = librosa.load(output_path, sr=None)
+                ys_tsm.append(y_tmp)
+                tsm_algorithms.append(tsm_algorithm.name)
+            
+            # Run the metrics
+            decay_rate_deviation(x, ys_tsm, tsm_algorithms, sr)
+            spectral_envelopes_mse(x, ys_tsm, tsm_algorithms, sr)
+            plot_fuzzy_energy(x, ys_tsm, tsm_algorithms, sr)
+
+        
+        for factor in config.NO_REFERENCE_FACTORS["ps_factors"]:
+            ys_ps = []
+            ps_algorithms = []
+            for ps_algorithm in config.PS_ALGORITHMS:
+                output_path = Path(f"{config.OUTPUT_DIR}/wav48/ps/{ps_algorithm.name}/{factor}/{file}")
+                y_tmp, sr = librosa.load(output_path, sr=None)
+                ys_ps.append(y_tmp)
+                ps_algorithms.append(ps_algorithm.name)
+                
+            # Run the metrics
+            decay_rate_deviation(x, ys_ps, ps_algorithm, sr)
+            spectral_envelopes_mse(x, ys_ps, ps_algorithm, sr)
+            plot_fuzzy_energy(x, ys_ps, ps_algorithm, sr)
+            
+
 
 def plot_fuzzy_energy(input: np.array, outputs: np.ndarray, outputs_names: list[str], sr: int):
     def get_fuzzy_energy(x: np.array, sr: int):
@@ -167,8 +199,4 @@ def spectral_envelopes_mse(input: np.array, outputs: np.ndarray, outputs_names: 
 
 
 if __name__ == "__main__":
-    x, sr = librosa.load(f"data/evaluation_short/input/48k/p225_001.wav", sr=None)
-    y, sr = librosa.load(f"data/evaluation_short/output_ps/48k/p225_001.wav", sr=None)
-    # y1, sr = librosa.load(f"data/evaluation_short/output_ps/48k/p225_002.wav", sr=None)
-
-    decay_rate_deviation(x, [y], ["PSOLA"], sr)
+    run_audio_metrics()

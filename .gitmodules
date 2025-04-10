@@ -13,3 +13,6 @@
 [submodule "model/demucs-v2-p9"]
 	path = model/demucs-v2-p9
 	url = https://github.com/mp-smc23/demucs-v2-p9.git
+[submodule "conversationGeneration"]
+	path = conversationGeneration
+	url = https://github.com/mp-smc23/conversationGeneration.git

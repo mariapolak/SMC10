@@ -15,7 +15,7 @@ def create_wav_48k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
     for extension in extensions:
         for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True): 
             audio_path_obj = Path(audio_path) 
-            output_filepath = f"{output_dir}/{audio_path_obj.parent}/{audio_path_obj.stem}.wav" # create file path for the output file
+            output_filepath = f"{output_dir}/{audio_path_obj.parent}/{audio_path_obj.stem}.{extension}" # create file path for the output file
             Path(output_filepath).parent.mkdir(parents=True, exist_ok=True)                     # assure the directory exists
             
             x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)
@@ -23,9 +23,9 @@ def create_wav_48k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             
 def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["flac", "wav"]):
     for extension in extensions:
-        for audio_path in glob.iglob(f"**/*.{extension}", root_dir=input_dir, recursive=True): 
+        for audio_path in glob.iglob(f"**/*_mic1.{extension}", root_dir=input_dir, recursive=True): 
             audio_path_obj = Path(audio_path) 
-            output_filepath = f"{output_dir}/{audio_path_obj.parent}/{audio_path_obj.stem}.wav"
+            output_filepath = f"{output_dir}/{audio_path_obj.parent}/{audio_path_obj.stem}.{extension}"
             Path(output_filepath).parent.mkdir(parents=True, exist_ok=True)
             
             x, sr = librosa.load(f"{input_dir}/{audio_path}", sr=None)
@@ -33,6 +33,6 @@ def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             sf.write(output_filepath, x_res, 16000)
             
 if __name__ == "__main__":
-    create_wav_16k("data/output/wav16", "data/output/wav48", ["wav"])
-    create_wav_16k("data/input/wav16", "data/input/wav48", ["wav"])
+    # create_wav_16k("data/output/wav16", "data/output/wav48", ["flac"])
+    create_wav_16k("data/input/SpeechDatasets/VCTK/wav16_silence_trimmed", "data/input/SpeechDatasets/VCTK/wav48_silence_trimmed", ["flac"])
             

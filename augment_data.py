@@ -28,20 +28,22 @@ def augment_with_pvs(input_dir, output_dir):
 
         for directory in tqdm(glob.glob(f"./*/", root_dir=input_dir, recursive=True)):
             logger.info(f"Processing directory: {directory}")
+
+            ps_factors = np.random.uniform(-3,5, size=3)
+            logger.info(f"Pitch Shifting factors: {ps_factors}")
+
             for audio_path in glob.iglob(f"**/*.flac", root_dir=f"{input_dir}/{directory}", recursive=True):
                 output_audio_directory = Path(f"{output_dir}/{directory}/{audio_path}").parent
                 filename = Path(audio_path).stem
                 output_audio_directory.mkdir(parents=True, exist_ok=True)
 
                 x, sr = librosa.load(f"{input_dir}/{directory}/{audio_path}", sr=None)  # load the audio file
-                output_file = f"{output_audio_directory}/{filename}.flac"
+                output_file = f"{output_audio_directory}/{filename}.wav"
                 sf.write(output_file, x, sr)
                 writer.writerow([output_file, 0, 0])
 
-                for i in range(3):
+                for i, ps_factor in enumerate(ps_factors):
                     try:
-                        ps_factor = np.clip(np.random.normal(0, 0.8), -1, 1)
-                        ps_factor = ps_factor * 3 if ps_factor < 0 else ps_factor * 5
                         y_tmp = ps_pv.pitch_shift(x, sr, ps_factor)
                     except librosa.ParameterError:
                         logger.error(f"ParameterError: {ps_pv.name} {ps_factor} {audio_path}")
@@ -51,9 +53,7 @@ def augment_with_pvs(input_dir, output_dir):
                         continue
 
                     try:
-                        tsm_factor = (np.clip(np.random.normal(0, 0.8), -1, 1) + 1) / 2
-                        tsm_factor = tsm_factor * 0.65 + 0.75
-
+                        tsm_factor = np.random.uniform(0.75, 1.35)
                         y = tsm_pv.time_stretch(y_tmp, sr, tsm_factor)
                     except librosa.ParameterError:
                         logger.error(f"ParameterError: {tsm_pv.name} {tsm_factor} {audio_path}")
@@ -63,13 +63,15 @@ def augment_with_pvs(input_dir, output_dir):
                         continue
                 
                     try:
-                        output_file = f"{output_audio_directory}/{filename}_{i}.flac"
+                        output_file = f"{output_audio_directory}_{i}/{filename}.wav"
+                        Path(output_file).parent.mkdir(parents=True, exist_ok=True)
                         sf.write(output_file, y, sr)
                         writer.writerow([output_file, ps_factor, tsm_factor])
 
                     except Exception as e:
-                        logger.error(f"Error writing file {output_audio_directory}/{filename}_{i}.flac: {e}")
+                        logger.error(f"Error writing file {output_audio_directory}_{i}/{filename}.wav: {e}")
                         continue
+            
 
 def augment_with_resampling(input_dir, output_dir):
     logger.info("Starting augmentation with resampling")
@@ -83,47 +85,49 @@ def augment_with_resampling(input_dir, output_dir):
         for directory in tqdm(glob.glob(f"./*/", root_dir=input_dir, recursive=True)):
             logger.info(f"Processing directory: {directory}")
 
+            rs_factors = np.random.uniform(0.5, 1.5, size=3)
+            logger.info(f"Resampling factors: {rs_factors}")
+
             for audio_path in glob.iglob(f"**/*.flac", root_dir=f"{input_dir}/{directory}", recursive=True):
                 output_audio_directory = Path(f"{output_dir}/{directory}/{audio_path}").parent
                 filename = Path(audio_path).stem
                 output_audio_directory.mkdir(parents=True, exist_ok=True)
 
                 x, sr = librosa.load(f"{input_dir}/{directory}/{audio_path}", sr=None)  # load the audio file
-                output_file = f"{output_audio_directory}/{filename}.flac"
+                output_file = f"{output_audio_directory}/{filename}.wav"
                 sf.write(output_file, x, sr)
                 writer.writerow([output_file, 0])
-                for i in range(3):
+                for i, factor in enumerate(rs_factors):
                     try:
-                        rs_factor = (np.clip(np.random.normal(0, 0.8), -1, 1) + 1) / 2
-                        rs_factor = rs_factor * 0.65 + 0.75
-                        y = resampler.time_stretch(x, sr, rs_factor)
+                        y = resampler.time_stretch(x, sr, factor)
                     except librosa.ParameterError:
-                        logger.error(f"ParameterError: {resampler.name} {rs_factor} {audio_path}")
+                        logger.error(f"ParameterError: {resampler.name} {factor} {audio_path}")
                         continue
                     except RuntimeError as e:
-                        logger.error(f"RuntimeError: {resampler.name} {rs_factor} {audio_path}")
+                        logger.error(f"RuntimeError: {resampler.name} {factor} {audio_path}")
                         continue
                 
                     try:
-                        output_file = f"{output_audio_directory}_{i}/{filename}.flac"
+                        output_file = f"{output_audio_directory}_{i}/{filename}.wav"
                         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
                         sf.write(output_file, y, sr)
-                        writer.writerow([output_file, rs_factor])
+                        writer.writerow([output_file, factor])
 
                     except Exception as e:
-                        logger.error(f"Error writing file {output_audio_directory}/{filename}_{i}.flac: {e}")
+                        logger.error(f"Error writing file {output_audio_directory}_{i}/{filename}.wav: {e}")
                         continue
+            
 
 def test():
     ps_factors = []
     tsm_factors = []
     for i in range(100):
-        ps_factor = np.clip(np.random.normal(0, 0.8), -1, 1)
+        ps_factor = np.clip(np.random.normal(0, 0.27), -1, 1)
         ps_factor = ps_factor * 3 if ps_factor < 0 else ps_factor * 5
         ps_factors.append(ps_factor)
 
-        tsm_factor = (np.clip(np.random.normal(0, 0.8), -1, 1) + 1) / 2
-        tsm_factor = tsm_factor * 0.65 + 0.75
+        tsm_factor = (np.clip(np.random.normal(0, 0.27), -1, 1) + 1) / 2
+        tsm_factor = tsm_factor * 0.85 + 0.65
         tsm_factors.append(tsm_factor)
 
     plt.figure(figsize=(10, 5))
@@ -156,15 +160,20 @@ if __name__ == "__main__":
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    augment_with_pvs(input_dir, output_dir)
-    logger.info("Augmentation with phase vocoder completed")
+    try:
+        augment_with_pvs(input_dir, output_dir)
+        logger.info("Augmentation with phase vocoder completed")
 
-    timestamp = datetime.now().strftime("%y%m%d%H%M")
-    output_dir_2 = f"{config.OUTPUT_DIR}_{timestamp}/SpeechDatasets/VCTK/wav16_silence_trimmed"
-    Path(output_dir_2).mkdir(parents=True, exist_ok=True) 
+        timestamp = datetime.now().strftime("%y%m%d%H%M")
+        output_dir_2 = f"{config.OUTPUT_DIR}_{timestamp}/SpeechDatasets/VCTK/wav16_silence_trimmed"
+        Path(output_dir_2).mkdir(parents=True, exist_ok=True) 
 
-    augment_with_resampling(input_dir, output_dir_2)
-    logger.info("Augmentation with resampling completed")
+        augment_with_resampling(input_dir, output_dir_2)
+        logger.info("Augmentation with resampling completed")
+
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        
 
 
     

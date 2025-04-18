@@ -1,4 +1,5 @@
 from pathlib import Path
+from tqdm import tqdm
 
 import config
 import librosa
@@ -23,7 +24,7 @@ def create_wav_48k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             
 def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["flac", "wav"]):
     for extension in extensions:
-        for audio_path in glob.iglob(f"**/*_mic1.{extension}", root_dir=input_dir, recursive=True): 
+        for audio_path in tqdm(glob.glob(f"**/*.{extension}", root_dir=input_dir, recursive=True)): 
             audio_path_obj = Path(audio_path) 
             output_filepath = f"{output_dir}/{audio_path_obj.parent}/{audio_path_obj.stem}.{extension}"
             Path(output_filepath).parent.mkdir(parents=True, exist_ok=True)
@@ -34,5 +35,6 @@ def create_wav_16k(output_dir: str, input_dir: str, extensions: list[str] = ["fl
             
 if __name__ == "__main__":
     # create_wav_16k("data/output/wav16", "data/output/wav48", ["flac"])
-    create_wav_16k("data/input/SpeechDatasets/VCTK/wav16_silence_trimmed", "data/input/SpeechDatasets/VCTK/wav48_silence_trimmed", ["flac"])
+    # create_wav_16k("data/input/SpeechDatasets/VCTK/wav16_silence_trimmed", "data/input/SpeechDatasets/VCTK/wav48_silence_trimmed", ["flac"])
+    create_wav_16k("conversationGeneration/generations/audio/train_16k_no_aug", "conversationGeneration/generations/audio/train_48k_no_aug", ["wav"])
             

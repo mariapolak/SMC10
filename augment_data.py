@@ -66,7 +66,7 @@ def augment_with_pvs(input_dir, output_dir):
                         output_file = f"{output_audio_directory}/{filename}_{i}.flac"
                         sf.write(output_file, y, sr)
                         writer.writerow([output_file, ps_factor, tsm_factor])
-                        return
+
                     except Exception as e:
                         logger.error(f"Error writing file {output_audio_directory}/{filename}_{i}.flac: {e}")
                         continue
@@ -109,7 +109,7 @@ def augment_with_resampling(input_dir, output_dir):
                         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
                         sf.write(output_file, y, sr)
                         writer.writerow([output_file, rs_factor])
-                        return
+
                     except Exception as e:
                         logger.error(f"Error writing file {output_audio_directory}/{filename}_{i}.flac: {e}")
                         continue
@@ -144,8 +144,8 @@ def test():
 
 
 if __name__ == "__main__":
-    input_dir = f"{config.INPUT_DIR}/SpeechDatasets/VCTK/wav48_silence_trimmed" 
-    output_dir = f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/SpeechDatasets/VCTK/wav48_silence_trimmed"
+    input_dir = f"{config.INPUT_DIR}/SpeechDatasets/VCTK/wav16_silence_trimmed" 
+    output_dir = f"{config.OUTPUT_DIR}_{config.TIMESTAMP}/SpeechDatasets/VCTK/wav16_silence_trimmed"
     Path(output_dir).mkdir(parents=True, exist_ok=True) 
 
     logging.basicConfig(
@@ -157,13 +157,14 @@ if __name__ == "__main__":
     )
 
     augment_with_pvs(input_dir, output_dir)
+    logger.info("Augmentation with phase vocoder completed")
 
     timestamp = datetime.now().strftime("%y%m%d%H%M")
-    output_dir_2 = f"{config.OUTPUT_DIR}_{timestamp}/SpeechDatasets/VCTK/wav48_silence_trimmed"
+    output_dir_2 = f"{config.OUTPUT_DIR}_{timestamp}/SpeechDatasets/VCTK/wav16_silence_trimmed"
     Path(output_dir_2).mkdir(parents=True, exist_ok=True) 
 
     augment_with_resampling(input_dir, output_dir_2)
-
+    logger.info("Augmentation with resampling completed")
 
 
     

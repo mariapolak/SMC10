@@ -180,3 +180,4 @@ pt-models/wav2vec_small.pt
 output.zip
 output.tar.gz
 
+*.tar.gz

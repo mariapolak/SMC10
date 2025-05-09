@@ -21,3 +21,4 @@ safetensors
 seaborn
 cliffs-delta
 effect_size_analysis
+tdqm

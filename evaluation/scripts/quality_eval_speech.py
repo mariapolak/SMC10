@@ -16,7 +16,7 @@ import pandas as pd
 import soundfile as sf
 import matplotlib.pyplot as plt
 
-import audio_converter as ac
+import random_scripts.audio_converter as ac
 
 def run_stoi(output_file: str, algorithm_type: str, algorithm_name: str, factor: int,
              root_dir_deg: str = ac.WAV_48K_DIR, root_dir_ref: str = config.INPUT_DIR):

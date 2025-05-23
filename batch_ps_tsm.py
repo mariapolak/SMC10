@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import soundfile as sf
-import audio_converter as ac
+import random_scripts.audio_converter as ac
 
 import config
 import librosa

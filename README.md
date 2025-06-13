@@ -14,7 +14,6 @@ This repository contains the code, data, and resources for the master’s thesis
     – Is it beneficial to use state-of-the-art methods for data augmentation?  
     – Is it justified to use slower methods that require more computational resources?
 
-
 ## Project Overview
 
 This project investigates the role of pitch-shifting (PS) and time-scale modification (TSM) in speech processing and machine learning. It evaluates a range of classical and modern PS/TSM algorithms in terms of:
@@ -45,12 +44,27 @@ The repository is organized as follows:
 - `plots/`: notebooks for plotting data and results
 - `demucs-v2-ps-ts/`: submodule containing models and training scripts
 
-
 ## Running the project
 
+### Submodules
+
+Before running the project, ensure that all required submodules are initialized by executing:
+
+```
+git submodule update --init --recursive
+```
+
+Note: The conversation generation submodule is a private repository and requires restricted access. This submodule is not essential for the core functionality of the code. If you encounter an error related to this submodule during initialization, you may safely ignore it.
+
+### Dependencies
+
 To run the project install all python dependencies using:
+
 ```
 pip install -r requirements.txt
 ```
-`batch_ps_tsm.py` applies PS and TSM methods to data found in `data/` directory. It is possible to change the default behavior by modifying `config.py` file.  
-`augment_data.py` applies augmentation pipeline to given data.
+
+### Code
+
+- `batch_ps_tsm.py` applies PS and TSM methods to data found in `data/` directory. It is possible to change the default behavior by modifying `config.py` file.  
+- `augment_data.py` applies augmentation pipeline to given data.
